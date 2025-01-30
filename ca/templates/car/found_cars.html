@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - Car Booking</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .car-container {
+            margin-top: 30px;
+        }
+        .car-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.2s ease-in-out;
+        }
+        .car-card:hover {
+            transform: scale(1.03);
+        }
+        .car-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .car-card .card-body {
+            padding: 15px;
+        }
+        .car-card h5 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .car-card p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .btn-view {
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .btn-view:hover {
+            background-color: #0056b3;
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            font-size: 18px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container car-container">
+    <h2 class="text-center mb-4">Search Results</h2>
+
+    {% if car_list %}
+        <div class="row">
+            {% for car in car_list %}
+                <div class="col-md-4 mb-4">
+                    <div class="car-card">
+                        <img src="{{ car.image.url }}" alt="{{ car.name }}">
+                        <div class="card-body">
+                            <h5>{{ car.name }}</h5>
+                            <p><strong>Type:</strong> {{ car.car_type }}</p>
+                            <p><strong>Seats:</strong> {{ car.seating_capacity }}</p>
+                            <p><strong>Fuel Type:</strong> {{ car.fuel_type }}</p>
+                            <p><strong>Price:</strong> Rs. {{ car.price_per_km }} per km</p>
+                            <p><strong>Available:</strong> {% if car.is_available %} Yes {% else %} No {% endif %}</p>
+                            <a href="{% url 'car_details' car.id %}" class="btn-view">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-results">
+            <p>No cars found matching your search criteria.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

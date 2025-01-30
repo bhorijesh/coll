@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Booking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 30px;
+            font-size: 32px;
+        }
+
+        form {
+            width: 50%;
+            margin: 30px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h3 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 5px;
+            margin-top: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        input[type="date"] {
+            width: calc(50% - 10px);
+            display: inline-block;
+        }
+
+        input[type="tel"], input[type="text"], input[type="email"], textarea {
+            width: 100%;
+        }
+
+        .half-width {
+            width: calc(50% - 10px);
+            display: inline-block;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            font-size: 18px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #map {
+            height: 300px;
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .form-row .half-width {
+            width: 48%;
+        }
+
+        .form-row input[type="text"], .form-row input[type="email"], .form-row input[type="tel"] {
+            width: 100%;
+        }
+
+        .form-row input[type="date"] {
+            width: calc(50% - 10px);
+        }
+    </style>
+</head>
+<body>
+    <h1>Book a Car</h1>
+    <form method="POST" action="{% url 'booking_view' %}">
+        {% csrf_token %}
+        
+        <h3>Customer Information</h3>
+        <label for="billname">Full Name:</label>
+        <input type="text" id="billname" name="billname" required><br>
+
+        <label for="billemail">Email:</label>
+        <input type="email" id="billemail" name="billemail" required><br>
+
+        <label for="billphone">Phone Number:</label>
+        <input type="tel" id="billphone" name="billphone" required><br>
+
+        <label for="billaddress">Address:</label>
+        <textarea id="billaddress" name="billaddress" required></textarea><br>
+
+        <div class="form-row">
+            <div class="half-width">
+                <label for="billcity">City:</label>
+                <input type="text" id="billcity" name="billcity" required><br>
+            </div>
+            <div class="half-width">
+                <label for="inputState">State:</label>
+                <input type="text" id="inputState" name="inputState" required><br>
+            </div>
+        </div>
+
+        <label for="inputZip">Zip Code:</label>
+        <input type="text" id="inputZip" name="inputZip" required><br>
+
+        <h3>Booking Details</h3>
+        <input type="hidden" name="car_id" value="{{ car.id }}">
+        
+        <p>You have chosen: <strong>{{ car.name }}</strong></p>
+        <p>Price: Rs. <strong>{{ car.price_per_km }}</strong> per Km</p>
+        <p>Description: <strong>{{ car.description }}</strong></p>
+        </select><br>
+
+        <div class="form-row">
+            <div class="half-width">
+                <label for="date">Start Date:</label>
+                <input type="date" id="date" name="date" ><br>
+            </div>
+            <div class="half-width">
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date"><br>
+            </div>
+        </div>
+
+        <h3>Pickup and Drop-off Locations</h3>
+        <div id="map"></div>
+
+        <div class="form-row">
+            <div class="half-width">
+                <label for="fl_lat">Pickup Latitude:</label>
+                <input type="text" id="fl_lat" name="fl_lat" required readonly><br>
+            </div>
+            <div class="half-width">
+                <label for="fl_lon">Pickup Longitude:</label>
+                <input type="text" id="fl_lon" name="fl_lon" required readonly><br>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="half-width">
+                <label for="tl_lat">Drop-off Latitude:</label>
+                <input type="text" id="tl_lat" name="tl_lat" required readonly><br>
+            </div>
+            <div class="half-width">
+                <label for="tl_lon">Drop-off Longitude:</label>
+                <input type="text" id="tl_lon" name="tl_lon" required readonly><br>
+            </div>
+        </div>
+
+        <button type="submit">Book Now</button>
+    </form>
+
+    <script>
+        var map = L.map('map').setView([27.7172, 85.3240], 13); // Default location: Kathmandu, Nepal
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var pickupMarker, dropoffMarker;
+
+        function onMapClick(e) {
+            if (!pickupMarker) {
+                pickupMarker = L.marker(e.latlng, {draggable: true}).addTo(map);
+                document.getElementById('fl_lat').value = e.latlng.lat;
+                document.getElementById('fl_lon').value = e.latlng.lng;
+
+                pickupMarker.on('dragend', function(event) {
+                    var position = event.target.getLatLng();
+                    document.getElementById('fl_lat').value = position.lat;
+                    document.getElementById('fl_lon').value = position.lng;
+                });
+            } else if (!dropoffMarker) {
+                dropoffMarker = L.marker(e.latlng, {draggable: true, icon: L.icon({iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png', iconSize: [25, 41]})}).addTo(map);
+                document.getElementById('tl_lat').value = e.latlng.lat;
+                document.getElementById('tl_lon').value = e.latlng.lng;
+
+                dropoffMarker.on('dragend', function(event) {
+                    var position = event.target.getLatLng();
+                    document.getElementById('tl_lat').value = position.lat;
+                    document.getElementById('tl_lon').value = position.lng;
+                });
+            }
+        }
+
+        map.on('click', onMapClick);
+    </script>
+</body>
+</html>

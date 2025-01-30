@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ car.name }} - Details</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #333;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+            font-size: 24px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .car-details {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .car-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info {
+            flex: 1;
+            padding-left: 20px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-block;
+            background: #ff5733;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .button:hover {
+            background: #c43e1b;
+        }
+
+        /* Map container */
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ car.manufacturer }} {{ car.name }} ({{ car.year }})</h1>
+    </header>
+    
+    <div class="container">
+        <div class="car-details">
+            {% if car.image %}
+                <img src="{{ car.image.url }}" alt="{{ car.name }}" class="car-image">
+            {% else %}
+                <p>No Image Available</p>
+            {% endif %}
+            
+            <div class="info">
+                <p><strong>Manufacturer:</strong> {{ car.manufacturer }}</p>
+                <p><strong>Model:</strong> {{ car.name }}</p>
+                <p><strong>Year:</strong> {{ car.year }}</p>
+                <p><strong>Fuel Type:</strong> {{ car.fuel_type }}</p>
+                <p><strong>Seating Capacity:</strong> {{ car.seating_capacity }} seats</p>
+                <p><strong>Price per km:</strong> ${{ car.price_per_km }}</p>
+                <p><strong>Availability:</strong> {% if car.is_available %} Available {% else %} Not Available {% endif %}</p>
+                <p><strong>Description:</strong> {{ car.description }}</p>
+                <a href="{% url 'booking_view' %}?car_id={{ car.id }}" class="button">Book Now</a>
+            </div>
+        </div>
+
+        <!-- Map container -->
+        <h3>Car Location:</h3>
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Get latitude and longitude from Django template
+        var latitude = {{ car.latitude }};
+        var longitude = {{ car.longitude }};
+
+        // Initialize the map
+        var map = L.map('map').setView([latitude, longitude], 14);
+
+        // Load and display the tile layer from OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add a marker for the car location
+        L.marker([latitude, longitude]).addTo(map)
+            .bindPopup('<b>{{ car.name }}</b><br>Location')
+            .openPopup();
+    </script>
+</body>
+</html>

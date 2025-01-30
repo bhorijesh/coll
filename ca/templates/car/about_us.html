@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Car Booking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        nav {
+            margin: 20px;
+            text-align: center;
+        }
+
+        nav a {
+            margin: 0 15px;
+            color: #333;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        nav a:hover {
+            color: #007bff;
+        }
+
+        .about-content {
+            padding: 50px;
+            text-align: center;
+        }
+
+        .about-content h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        .about-content p {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Welcome to Car Booking</h1>
+    <p>Your trusted partner for car rentals</p>
+</header>
+
+<nav>
+    <a href="{% url 'index' %}">Home</a>
+    <a href="{% url 'booking_view' %}">Book a Car</a>
+    <a href="{% url 'about_us' %}">About Us</a>
+    <a href="{% url 'contact_us' %}">Contact Us</a>
+</nav>
+
+<div class="about-content">
+    <h2>About Us</h2>
+    <p>We are a leading car rental service provider, offering a wide range of cars for every budget. Our mission is to provide a seamless car rental experience to our customers, ensuring quality service, reliability, and convenience.</p>
+    <p>We have been in the car rental business for over 10 years, helping thousands of customers find the right vehicle for their needs. Whether you're traveling for business, leisure, or a special event, we’ve got the perfect car for you!</p>
+    <p>Contact us today to book your car and experience the difference!</p>
+</div>
+
+<footer>
+    <p>&copy; 2025 Car Booking Inc. | All Rights Reserved</p>
+</footer>
+
+</body>
+</html>

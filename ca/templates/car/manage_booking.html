@@ -1,0 +1,26 @@
+<h1>Manage Bookings</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Booking ID</th>
+            <th>User</th>
+            <th>Car</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.id }}</td>
+                <td>{{ booking.user.get_full_name }}</td>
+                <td>{{ booking.car.name }}</td>
+                <td>{{ booking.status }}</td>
+                <td>
+                    <a href="{% url 'approve_booking' booking.id %}">Approve</a> | 
+                    <a href="{% url 'reject_booking' booking.id %}">Reject</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

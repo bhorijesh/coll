@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create a New Car</title>
+
+    <!-- Leaflet.js CSS and JS from CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- Optional: Add some custom styles for the map -->
+    <style>
+        /* General page styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+
+        /* Container for the form */
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Form elements */
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        form label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        form input, form select, form button {
+            font-size: 1rem;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        form input:focus, form select:focus, form button:focus {
+            border-color: #3498db;
+        }
+
+        /* Submit button styling */
+        button[type="submit"] {
+            background-color: #3498db;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+
+        /* Map container styling */
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        /* Add spacing and padding */
+        .form-container p {
+            margin-top: 0;
+            color: #777;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Create a New Car</h1>
+
+    <div class="form-container">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Render form fields -->
+            {{ form.as_p }}
+
+            <!-- The map container -->
+            <div id="map"></div>
+
+            <button type="submit">Save Car</button>
+        </form>
+    </div>
+
+    <script>
+        // Initialize the map, set to a default location (Kathmandu, Nepal)
+        var map = L.map('map').setView([27.7172, 85.3240], 13); 
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var marker;
+
+        // Function to handle map click
+        function onMapClick(e) {
+            // Check if marker already exists
+            if (!marker) {
+                // Add a marker at the clicked position and make it draggable
+                marker = L.marker(e.latlng, {draggable: true}).addTo(map);
+                // Update the latitude and longitude fields in the form
+                document.getElementById('id_latitude').value = e.latlng.lat;
+                document.getElementById('id_longitude').value = e.latlng.lng;
+
+                // Update the latitude and longitude when the marker is dragged
+                marker.on('dragend', function(event) {
+                    var position = event.target.getLatLng();
+                    document.getElementById('id_latitude').value = position.lat;
+                    document.getElementById('id_longitude').value = position.lng;
+                });
+            } else {
+                // If the marker already exists, just update its position on click
+                marker.setLatLng(e.latlng);
+                // Update the latitude and longitude fields with the new position
+                document.getElementById('id_latitude').value = e.latlng.lat;
+                document.getElementById('id_longitude').value = e.latlng.lng;
+            }
+        }
+
+        // Listen for map clicks
+        map.on('click', onMapClick);
+    </script>
+
+</body>
+</html>
