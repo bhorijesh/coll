@@ -122,7 +122,7 @@
                     <tr>
                         <td>{{ car.name }}</td>
                         <td>{{ car.description }}</td>
-                        <td>${{ car.price_per_day }}</td>
+                        <td>${{ car.price_per_km }}</td>
                         <td>
                             <a href="{% url 'car_update' car.id %}" class="btn">Edit</a>
                             <form action="{% url 'car_delete' car.id %}" method="POST" style="display:inline;">

@@ -114,9 +114,9 @@
             
                 <!-- Show the calculated distance -->
                 {% if distance %}
-                    <p><strong>Distance:</strong> {{ distance|floatformat:2 }} km away</p>
+                <p><strong>Distance:</strong> {{ distance|floatformat:2 }} km away</p>
                 {% else %}
-                    <p><strong>Distance:</strong> Not available</p>
+                <p><strong>Distance:</strong> Not available</p>
                 {% endif %}
                 
                 <a href="{% url 'booking_view' %}?car_id={{ car.id }}" class="button btn btn-primary">Book Now</a>

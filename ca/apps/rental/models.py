@@ -52,3 +52,15 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    
+    
+class lat_long(models.Model):
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    
+class Payment(models.Model):
+    token = models.CharField(max_length=100)
+    amount = models.IntegerField()
+    status = models.CharField(max_length=20)
+    transaction_id = models.CharField(max_length=50, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)

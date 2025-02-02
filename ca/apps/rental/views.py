@@ -1,3 +1,4 @@
+import requests
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm 
 from django.contrib.auth.decorators import login_required
@@ -21,22 +22,12 @@ import math
 from .models import *
 from .utils import *
 from .forms import *
+from django.conf import settings
 
 class index(ListView):
     model = Car
     template_name = 'car/index.html'
     context_object_name = 'car_list'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Check if the nearest car ID exists in the session
-        nearest_car_id = self.request.session.get('nearest_car_id')
-        if nearest_car_id:
-            nearest_car = Car.objects.get(id=nearest_car_id)
-            context['nearest_car'] = nearest_car
-
-        return context
 
 class BookingView(LoginRequiredMixin, View):
     def get(self, request):
@@ -61,34 +52,36 @@ class BookingView(LoginRequiredMixin, View):
             address=request.POST.get('billaddress')
         )
 
+        # Parse start and end dates from the form
         start_date = datetime.strptime(request.POST.get('date'), '%Y-%m-%d')
         end_date = datetime.strptime(request.POST.get('end_date'), '%Y-%m-%d')
+
+        # Calculate total days for the booking
         total_days = (end_date - start_date).days
-        
-        # Calculate total amount based on the chosen pricing method
-        if request.POST.get('pricing_method') == 'per_day':
-            total_amount = car.price_per_km * total_days
-        else: 
-            distance = Decimal(calculate_haversine_distance(
-                float(request.POST.get('fl_lat')),
-                float(request.POST.get('fl_lon')),
-                float(request.POST.get('tl_lat')),
-                float(request.POST.get('tl_lon'))
-            ))
-            total_amount = distance * Decimal(car.price_per_km)  
-        
+
+        if total_days < 1:
+            # Ensure that the end date is after the start date
+            return render(request, 'car/booking_form.html', {
+                'car': car, 
+                'error_message': 'The end date must be later than the start date.'
+            })
+
+        # Calculate the total amount based on the number of days
+        total_amount = car.price_per_km * total_days
+
+        # Create the booking instance
         booking = Booking.objects.create(
             car=car,
             customer=customer,
             start_date=start_date,
             end_date=end_date,
             total_amount=total_amount,
-            from_location_lat=request.POST.get('fl_lat'),
-            from_location_lon=request.POST.get('fl_lon'),
-            to_location_lat=request.POST.get('tl_lat'),
-            to_location_lon=request.POST.get('tl_lon')
         )
+
+        # Redirect to booking confirmation page with the booking ID
         return redirect('booking_confirmation', booking_id=booking.id)
+
+
 
 
 
@@ -143,34 +136,39 @@ class CarDeleteView(LoginRequiredMixin, DeleteView):
         return Car.objects.filter(admin=self.request.user)
 
 
+
+
 class CarListView(ListView):
     model = Car
     template_name = 'car/car_list.html'
     context_object_name = 'cars'  # Use this context variable in your template
 
     def get_queryset(self):
-        # Try to fetch the user's profile
-        try:
-            user_profile = UserProfile.objects.get(user=self.request.user)
-        except UserProfile.DoesNotExist:
-            print("User profile not found")
-            return Car.objects.all()  # Return all cars if user profile does not exist
+        # Retrieve saved location from the session
+        user_lat = self.request.session.get('saved_latitude')
+        user_lon = self.request.session.get('saved_longitude')
 
-        user_lat = user_profile.latitude
-        user_lon = user_profile.longitude
-
-        # Check if the user has latitude and longitude
+        # Check if the saved location exists in the session
         if user_lat is None or user_lon is None:
-            print("User latitude or longitude is missing")
-            return Car.objects.all()  # If user's location is missing, return all cars
+            print("Saved location not found in session.")
+            return Car.objects.all()  # Return all cars if location is missing
+
+        try:
+            # Ensure the latitude and longitude values are floats
+            user_lat = float(user_lat)
+            user_lon = float(user_lon)
+        except ValueError:
+            # If conversion fails, return all cars
+            print("Invalid latitude or longitude format in session.")
+            return Car.objects.all()
 
         # Get all cars from the database
         cars = Car.objects.all()
 
-        # Add a distance attribute to each car
+        # Add a distance attribute to each car based on the saved location
         for car in cars:
             if car.latitude is not None and car.longitude is not None:
-                # Calculate distance only if car has location data
+                # Calculate distance only if the car has location data
                 car.distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
             else:
                 # No distance for cars with no location data
@@ -179,12 +177,13 @@ class CarListView(ListView):
 
         # Exclude cars with None distance and sort by distance (nearest first)
         filtered_cars = [car for car in cars if car.distance is not None]
-        
+
         if not filtered_cars:
             print("No cars with valid locations found")
-        
-        # Return sorted cars by distance
+
+        # Return sorted cars by distance (if any valid location data) or all cars if no valid data
         return sorted(filtered_cars, key=lambda car: car.distance) if filtered_cars else cars
+
 
 
 
@@ -326,37 +325,44 @@ def password_change(request):
 def admin_settings(request):
     return render(request, 'car/admin_settings.html')
 
+
 def car_details(request, car_id):
     """
     View to display car details, including price per km, location, and booking option.
     """
     car = get_object_or_404(Car, id=car_id)
 
-    # Try to fetch the user's profile
-    try:
-        user_profile = UserProfile.objects.get(user=request.user)
-    except UserProfile.DoesNotExist:
-        print("User profile not found")
-        # If no user profile is found, show the car details with no distance info
-        return render(request, 'car/car_details.html', {'car': car, 'distance': None})
+    # Retrieve saved location from the session
+    user_lat = request.session.get('saved_latitude')
+    user_lon = request.session.get('saved_longitude')
 
-    user_lat = user_profile.latitude
-    user_lon = user_profile.longitude
-
-    # Check if the user has latitude and longitude
+    # Check if the location is set and valid
     if user_lat is None or user_lon is None:
-        print("User latitude or longitude is missing")
+        print("Saved location not found in session.")
         return render(request, 'car/car_details.html', {'car': car, 'distance': None})
 
-    # Calculate the distance if both user and car have valid location data
+    try:
+        # Ensure the session values are floats
+        user_lat = float(user_lat)
+        user_lon = float(user_lon)
+    except ValueError:
+        print("Invalid latitude or longitude format in session.")
+        return render(request, 'car/car_details.html', {'car': car, 'distance': None})
+
+    # Calculate the distance if both car and user have valid location data
     if car.latitude is not None and car.longitude is not None:
-        # Unpack the coordinates and pass them as separate arguments
-        distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
+        try:
+            distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
+        except TypeError:
+            print("Invalid data types for distance calculation.")
+            distance = None
     else:
         distance = None
         print(f"Car {car.name} has no location data")
 
     return render(request, 'car/car_details.html', {'car': car, 'distance': distance})
+
+
 
 def car_search(request):
     query = request.GET.get('search', '')  # Get search query from URL parameters
@@ -384,3 +390,99 @@ def save_location(request):
     return JsonResponse({"status": "error"}, status=400)
 
 
+@csrf_exempt  # You can remove CSRF protection or use CSRF tokens as needed
+def save_lat_long(request):
+    if request.method == 'POST':
+        try:
+            # Parse the incoming JSON data
+            data = json.loads(request.body)
+            latitude = data.get('latitude')
+            longitude = data.get('longitude')
+            
+            # Check if latitude and longitude are valid
+            if latitude is None or longitude is None:
+                return JsonResponse({'message': 'Latitude and Longitude are required.'}, status=400)
+            
+            # Save latitude and longitude to the session
+            request.session['saved_latitude'] = latitude
+            request.session['saved_longitude'] = longitude
+
+            # Optionally, save the location to the database
+            location = lat_long.objects.create(latitude=latitude, longitude=longitude)
+            
+            # Return success response
+            return JsonResponse({'message': 'Location saved successfully!'})
+        
+        except ValueError:
+            return JsonResponse({'message': 'Invalid data format.'}, status=400)
+    
+    return JsonResponse({'message': 'Invalid request method.'}, status=405)
+
+
+def get_nearby_cars(request):
+    # Fetch the user's location from session
+    user_lat = request.session.get('saved_latitude')
+    user_lon = request.session.get('saved_longitude')
+
+    # Handle missing location
+    if user_lat is None or user_lon is None:
+        return JsonResponse({"error": "User location not found in session."}, status=400)
+
+    # Get all cars
+    cars = Car.objects.all()
+    
+    # List to store cars with their distance from the user
+    car_list = []
+    
+    # Function to calculate Euclidean distance (scaled by factor for practical distance)
+    def calculate_distance(lat1, lon1, lat2, lon2):
+        return math.sqrt((lat1 - lat2) ** 2 + (lon1 - lon2) ** 2)
+
+    # Calculate the distance for each car and add to the list
+    for car in cars:
+        # Scaling the latitude and longitude to reduce values (optional, for practical range)
+        distance = calculate_distance(float(user_lat), float(user_lon), car.latitude, car.longitude)
+        
+        car_data = {
+            "id": car.id,
+            "name": car.name,
+            "car_type": car.car_type,
+            "seating_capacity": car.seating_capacity,
+            "fuel_type": car.fuel_type,
+            "price_per_km": car.price_per_km,
+            "is_available": car.is_available,
+            "image_url": car.image.url if car.image else "",
+            "distance_km": round(distance, 2)  # Add distance in "unit"
+        }
+        
+        car_list.append(car_data)
+
+    # Sort the cars by distance (ascending)
+    nearest_cars = sorted(car_list, key=lambda x: x["distance_km"])[:5]
+
+    return JsonResponse({"cars": nearest_cars})
+
+@csrf_exempt
+def verify_payment(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        token = data.get("token")
+        amount = data.get("amount")
+
+        headers = {
+            "Authorization": f"Key {settings.KHALTI_SECRET_KEY}"
+        }
+        payload = {
+            "token": token,
+            "amount": amount
+        }
+        
+        response = requests.post("https://khalti.com/api/v2/payment/verify/", data=payload, headers=headers)
+        response_data = response.json()
+
+        if response.status_code == 200:
+            return JsonResponse({"message": "Payment Successful", "data": response_data})
+        else:
+            return JsonResponse({"message": "Payment Verification Failed", "data": response_data}, status=400)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)

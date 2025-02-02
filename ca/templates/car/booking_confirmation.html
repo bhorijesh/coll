@@ -1,122 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Booking Confirmation</title>
-    <script src="https://khalti.com/static/khalti-checkout.js"></script> <!-- Khalti Checkout Script -->
+    <script src="https://khalti.com/static/khalti-checkout.js"></script>
+
+    <!-- Khalti Checkout Script -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <style>
-        /* General Reset */
-        body, h1, p, button {
-            margin: 0;
-            padding: 0;
-            font-family: 'Arial', sans-serif;
-        }
-
-        body {
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        .booking-container {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            margin: auto;
-            text-align: left;
-        }
-
-        .booking-container h1 {
-            text-align: center;
-            font-size: 22px;
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .booking-container p {
-            font-size: 16px;
-            color: #555;
-            margin: 8px 0;
-        }
-
-        .booking-container button {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            background-color: #5c67f2;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            margin-top: 15px;
-        }
-
-        .booking-container button:hover {
-            background-color: #4a54e1;
-        }
+      /* General Reset */
+      body,
+      h1,
+      p,
+      button {
+        margin: 0;
+        padding: 0;
+        font-family: "Arial", sans-serif;
+      }
     </style>
-</head>
-<body>
-    <div class="booking-container">
-        <h1>Booking Confirmation</h1>
-        <p>Thank you for your booking!</p>
+    <script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script>
+
+  </head>
+  <body class="bg-gray-900 flex justify-center items-center h-screen">
+    <div
+      class="booking-container bg-gray-800 text-white p-8 rounded-lg shadow-2xl w-full max-w-lg"
+    >
+      <h1 class="text-center text-3xl font-bold mb-6 text-white">
+        Booking Confirmation
+      </h1>
+      <p class="text-lg mb-4">Thank you for your booking!</p>
+
+      <div class="mb-4">
         <p><strong>Booking ID:</strong> {{ booking.id }}</p>
         <p><strong>Car:</strong> {{ booking.car.name }}</p>
         <p><strong>Total Amount:</strong> Rs. {{ booking.total_amount }}</p>
         <p><strong>Start Date:</strong> {{ booking.start_date }}</p>
         <p><strong>End Date:</strong> {{ booking.end_date }}</p>
         <p><strong>Customer:</strong> {{ booking.customer.full_name }}</p>
+      </div>
 
-        <!-- Pay Now Button -->
-        <button id="pay-now-button">Pay Now</button>
+      <!-- Pay Now Button -->
+      <button
+        id="payment-button"
+        class="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition ease-in-out duration-300"
+      >
+        Pay Now
+      </button>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var publicKey = "{{ Khalti_public_key|escapejs }}";
-            var productIdentity = "{{ booking.id|escapejs }}";
-            var productName = "{{ booking.car.name|escapejs }}";
-            var productUrl = "https://yourwebsite.com/booking/{{ booking.id|escapejs }}";
-            var amount = parseFloat("{{ booking.total_amount }}") * 100;
 
-            if (isNaN(amount) || amount <= 0) {
-                console.error("Invalid amount:", amount);
-                return;
-            }
+      var config = {
+        publicKey: "test_public_key_d577b97ec4b54691a1abfeef62a5218e",
+        productIdentity: "1234567890",
+        productName: "Test Product",
+        productUrl: "http://localhost:8000/",
+        paymentPreference: ["KHALTI"],
+        eventHandler: {
+          onSuccess(payload) {
+            fetch("/verify-payment/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+              },
+              body: JSON.stringify(payload),
+            })
+              .then((response) => response.json())
+              .then((data) => alert(data.message))
+              .catch((error) => console.error(error));
+          },
+          onError(error) {
+            console.error(error);
+          },
+          onClose() {
+            console.log("Widget closed");
+          },
+        },
+      };
 
-            var config = {
-                publicKey: publicKey,
-                productIdentity: productIdentity,
-                productName: productName,
-                productUrl: productUrl,
-                amount: amount,
-                paymentPreference: ["KHALTI"],
-                onSuccess: function(payload) {
-                    console.log("Payment Successful", payload);
-                    alert("Payment Successful!");
-                },
-                onError: function(error) {
-                    console.error("Payment Error", error);
-                    alert("Payment Failed! Try Again.");
-                },
-                onClose: function() {
-                    console.log("Payment popup closed");
-                }
-            };
-
-            var checkout = new KhaltiCheckout(config);
-
-            document.getElementById("pay-now-button").addEventListener("click", function() {
-                checkout.show();
-            });
-        });
+      var checkout = new KhaltiCheckout(config);
+      document.getElementById("payment-button").onclick = function () {
+        checkout.show({ amount: 1000 }); // Amount in paisa (1000 paisa = 10 NPR)
+      };
     </script>
-</body>
+  </body>
 </html>

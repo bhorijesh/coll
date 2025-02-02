@@ -127,3 +127,7 @@ LOGIN_URL = '/login/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# settings.py
+KHALTI_PUBLIC_KEY = "test_public_key_d577b97ec4b54691a1abfeef62a5218e"
+KHALTI_SECRET_KEY = "test_secret_key_c9509c35a585441887dede250864c05e"
+
