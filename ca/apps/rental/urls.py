@@ -28,4 +28,5 @@ urlpatterns = [
     path('change-password/', views.password_change, name='admin_password_change'),
     path('car/<int:car_id>/', car_details, name='car_details'),
     path('cars/search', car_search, name='car_search'),
+    path('save-location/', save_location, name='save_location'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

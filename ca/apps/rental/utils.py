@@ -1,7 +1,8 @@
 import math
-from math import radians, sin, cos, sqrt, atan2
+from math import radians, sin, cos, sqrt, atan2,asin
 from .models import *
 from django.http import JsonResponse
+from geopy.distance import geodesic  
 
 
 def get_nearby_cars(user_lat, user_lon, radius_km=10):
@@ -13,26 +14,13 @@ def get_nearby_cars(user_lat, user_lon, radius_km=10):
             return nearby_cars
 
 def haversine(lat1, lon1, lat2, lon2):
-    """
-    Calculate the Haversine distance between two latitude/longitude points.
-    Returns the distance in kilometers.
-    """
-    R = 6371  # Radius of the Earth in kilometers
-
-    # Convert latitude and longitude from degrees to radians
-    lat1 = radians(lat1)
-    lon1 = radians(lon1)
-    lat2 = radians(lat2)
-    lon2 = radians(lon2)
-
-    # Haversine formula
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    R = 6371.0  # Radius of the Earth in km
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    distance = R * c  # Resulting distance in kilometers
+    return R * c
 
-    return distance
 
 # Haversine formula implementation
 def calculate_haversine_distance(from_lat, from_lon, to_lat, to_lon):
@@ -95,3 +83,9 @@ def get_nearest_car(user_lat, user_lon, min_distance=5, max_distance=10):
             nearest_car = car
 
     return nearest_car
+
+def calculate_distance(user_location, car_location):
+    """Returns the distance in km between user and car, or None if locations are invalid."""
+    if user_location and car_location:
+        return geodesic(user_location, car_location).km
+    return None

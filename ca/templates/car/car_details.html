@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ car.name }} - Details</title>
     
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEJ+K6Xk5U4Fv+M4S1czdARu3eQ5W4Fjs9T+LfPZmw5vSO3lW16lgAx7WUtUt" crossorigin="anonymous">
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+
     <style>
         /* General styles */
         body {
@@ -82,18 +85,20 @@
 </head>
 <body>
     <header>
-        <h1>{{ car.manufacturer }} {{ car.name }} ({{ car.year }})</h1>
+        <h1>{{ car.manufacturer }} {{ car.name }} </h1>
     </header>
     
     <div class="container">
-        <div class="car-details">
+        <div class="car-details row">
             {% if car.image %}
-                <img src="{{ car.image.url }}" alt="{{ car.name }}" class="car-image">
+                <div class="col-md-6">
+                    <img src="{{ car.image.url }}" alt="{{ car.name }}" class="car-image img-fluid">
+                </div>
             {% else %}
                 <p>No Image Available</p>
             {% endif %}
             
-            <div class="info">
+            <div class="info col-md-6">
                 <p><strong>Manufacturer:</strong> {{ car.manufacturer }}</p>
                 <p><strong>Model:</strong> {{ car.name }}</p>
                 <p><strong>Year:</strong> {{ car.year }}</p>
@@ -102,7 +107,15 @@
                 <p><strong>Price per km:</strong> ${{ car.price_per_km }}</p>
                 <p><strong>Availability:</strong> {% if car.is_available %} Available {% else %} Not Available {% endif %}</p>
                 <p><strong>Description:</strong> {{ car.description }}</p>
-                <a href="{% url 'booking_view' %}?car_id={{ car.id }}" class="button">Book Now</a>
+            
+                <!-- Show the calculated distance -->
+                {% if distance %}
+                    <p><strong>Distance:</strong> {{ distance|floatformat:2 }} km away</p>
+                {% else %}
+                    <p><strong>Distance:</strong> Not available</p>
+                {% endif %}
+                
+                <a href="{% url 'booking_view' %}?car_id={{ car.id }}" class="button btn btn-primary">Book Now</a>
             </div>
         </div>
 

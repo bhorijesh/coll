@@ -14,6 +14,9 @@ from django.contrib import messages
 from decimal import Decimal
 from django.contrib.auth.forms import PasswordChangeForm
 from datetime import datetime
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 import math
 from .models import *
 from .utils import *
@@ -139,31 +142,51 @@ class CarDeleteView(LoginRequiredMixin, DeleteView):
     def get_queryset(self):
         return Car.objects.filter(admin=self.request.user)
 
+
 class CarListView(ListView):
     model = Car
     template_name = 'car/car_list.html'
+    context_object_name = 'cars'  # Use this context variable in your template
 
     def get_queryset(self):
-        # Get the user's latitude and longitude from the GET request
-        user_lat = self.request.GET.get('lat')
-        user_lon = self.request.GET.get('lon')
+        # Try to fetch the user's profile
+        try:
+            user_profile = UserProfile.objects.get(user=self.request.user)
+        except UserProfile.DoesNotExist:
+            print("User profile not found")
+            return Car.objects.all()  # Return all cars if user profile does not exist
 
-        if user_lat and user_lon:
-            user_lat = float(user_lat)
-            user_lon = float(user_lon)
+        user_lat = user_profile.latitude
+        user_lon = user_profile.longitude
 
-            # Get all cars from the database
-            cars = Car.objects.all()
+        # Check if the user has latitude and longitude
+        if user_lat is None or user_lon is None:
+            print("User latitude or longitude is missing")
+            return Car.objects.all()  # If user's location is missing, return all cars
 
-            # Calculate the distance for each car and add it as a new field on the car object
-            for car in cars:
+        # Get all cars from the database
+        cars = Car.objects.all()
+
+        # Add a distance attribute to each car
+        for car in cars:
+            if car.latitude is not None and car.longitude is not None:
+                # Calculate distance only if car has location data
                 car.distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
+            else:
+                # No distance for cars with no location data
+                car.distance = None
+                print(f"Car {car.name} has no location data")
 
-            # Sort the cars by distance (nearest to farthest)
-            return sorted(cars, key=lambda car: car.distance)
-        else:
-            # If no lat/lon provided, return all cars
-            return Car.objects.all()
+        # Exclude cars with None distance and sort by distance (nearest first)
+        filtered_cars = [car for car in cars if car.distance is not None]
+        
+        if not filtered_cars:
+            print("No cars with valid locations found")
+        
+        # Return sorted cars by distance
+        return sorted(filtered_cars, key=lambda car: car.distance) if filtered_cars else cars
+
+
 
 def admin_car_list(request):
     # Get the logged-in user
@@ -179,36 +202,34 @@ class LoginUserWithCreation(FormView):
 
     def form_valid(self, form):
         # Log the user in
-        login(self.request, form.get_user())
+        user = form.get_user()
+        login(self.request, user)
 
-        # Check if the logged-in user is an admin
-        if self.request.user.is_superuser:
-            # Redirect to the admin panel
+        # Get latitude and longitude from the request
+        lat = self.request.POST.get('lat')
+        lon = self.request.POST.get('lon')
+
+        if lat and lon:
+            try:
+                lat = float(lat)
+                lon = float(lon)
+                # Update or create UserProfile with latitude and longitude
+                UserProfile.objects.update_or_create(
+                    user=user,
+                    defaults={'latitude': lat, 'longitude': lon}
+                )
+            except ValueError:
+                pass  # Handle the case where lat/lon are not valid floats
+
+        # Redirect based on user role (admin or regular user)
+        if user.is_superuser:
             return redirect('admin_homepage')
 
-        # Get user's location after successful login
-        user_lat = self.request.GET.get('lat')
-        user_lon = self.request.GET.get('lon')
-        
-        if user_lat and user_lon:
-            user_lat = float(user_lat)
-            user_lon = float(user_lon)
+        return redirect(self.success_url)
 
-            # Get all cars from the database
-            cars = Car.objects.all()
-
-            # Calculate distances and add them to the car objects
-            for car in cars:
-                car.distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
-
-            # Sort the cars by distance (nearest to farthest)
-            sorted_cars = sorted(cars, key=lambda car: car.distance)
-
-            nearest_car = sorted_cars[0] if sorted_cars else None  # Nearest car
-            return render(self.request, 'car/car_list.html', {'car_list': sorted_cars, 'nearest_car': nearest_car})
-
-        # Default redirection to the regular homepage if no location is provided
-        return super().form_valid(form)
+    def form_invalid(self, form):
+        # Handle invalid form submission
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 class RegisterView(FormView):
@@ -310,7 +331,32 @@ def car_details(request, car_id):
     View to display car details, including price per km, location, and booking option.
     """
     car = get_object_or_404(Car, id=car_id)
-    return render(request, 'car/car_details.html', {'car': car})
+
+    # Try to fetch the user's profile
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        print("User profile not found")
+        # If no user profile is found, show the car details with no distance info
+        return render(request, 'car/car_details.html', {'car': car, 'distance': None})
+
+    user_lat = user_profile.latitude
+    user_lon = user_profile.longitude
+
+    # Check if the user has latitude and longitude
+    if user_lat is None or user_lon is None:
+        print("User latitude or longitude is missing")
+        return render(request, 'car/car_details.html', {'car': car, 'distance': None})
+
+    # Calculate the distance if both user and car have valid location data
+    if car.latitude is not None and car.longitude is not None:
+        # Unpack the coordinates and pass them as separate arguments
+        distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
+    else:
+        distance = None
+        print(f"Car {car.name} has no location data")
+
+    return render(request, 'car/car_details.html', {'car': car, 'distance': distance})
 
 def car_search(request):
     query = request.GET.get('search', '')  # Get search query from URL parameters
@@ -322,3 +368,19 @@ def car_search(request):
         )  # Searching by car name (case-insensitive)
 
     return render(request, 'car/found_cars.html', {'car_list': cars})
+
+
+
+
+@csrf_exempt
+def save_location(request):
+    if request.method == "POST" and request.user.is_authenticated:
+        data = json.loads(request.body)
+        user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        user_profile.latitude = data.get("latitude")
+        user_profile.longitude = data.get("longitude")
+        user_profile.save()
+        return JsonResponse({"status": "success"})
+    return JsonResponse({"status": "error"}, status=400)
+
+

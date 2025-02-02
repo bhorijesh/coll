@@ -1,8 +1,13 @@
 from django.contrib import admin
+from django.contrib.auth.models import User
+from .models import Car, Customer, Booking, UserProfile
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import path
-from django.shortcuts import render
-from .models import Car, Customer, Booking
-from django.contrib.auth.models import User  # Assuming User model is being used for admin
+
+class UserProfileInline(admin.StackedInline):  # or admin.TabularInline
+    model = UserProfile
+    can_delete = False  # Optional: to prevent deletion of UserProfile from inline
+    verbose_name_plural = 'User Profile'
 
 class CustomAdminSite(admin.AdminSite):
     site_header = "Car Booking Admin"
@@ -40,3 +45,11 @@ admin_site = CustomAdminSite(name='custom_admin')
 admin_site.register(Car)
 admin_site.register(Customer)
 admin_site.register(Booking)
+
+# Register the User model with the inline UserProfile
+class UserAdmin(admin.ModelAdmin):
+    inlines = [UserProfileInline]
+
+# Unregister the default User admin and register your custom User admin with the inline
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)

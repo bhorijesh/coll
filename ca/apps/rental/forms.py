@@ -48,3 +48,7 @@ class CarCreateForm(forms.ModelForm):
 
     latitude = forms.FloatField()
     longitude = forms.FloatField()
+
+class LocationForm(forms.Form):
+    latitude = forms.DecimalField(max_digits=9, decimal_places=6, label="Latitude")
+    longitude = forms.DecimalField(max_digits=9, decimal_places=6, label="Longitude")

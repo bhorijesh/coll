@@ -47,3 +47,8 @@ class Booking(models.Model):
 
     def __str__(self):
         return f'{self.customer.full_name} - {self.car.name}'
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
