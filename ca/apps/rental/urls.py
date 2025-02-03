@@ -31,6 +31,8 @@ urlpatterns = [
     path('save-location/', views.save_lat_long, name='save_lat_long'),
     path('api/get_nearby_cars/', get_nearby_cars, name='get_nearby_cars'),
     path('save-location/', save_location, name='save_location'),
+    path('booking/<int:booking_id>/accept/', views.AcceptBookingView.as_view(), name='accept_booking'),
+    path('booking/<int:booking_id>/cancel/', views.CancelBookingView.as_view(), name='cancel_booking'),
     path("verify-payment/", verify_payment, name="verify_payment"),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

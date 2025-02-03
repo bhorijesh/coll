@@ -185,7 +185,7 @@
                         <div class="car-item">
                             <h3>{{ car.name }}</h3>
                             <p>{{ car.description }}</p>
-                            <p class="price">Price per Km: Rs. {{ car.price_per_km }}</p>
+                            <p class="price">Price per Day: Rs. {{ car.price_per_km }}</p>
                             {% if car.distance %}
                                 <p><strong>Distance:</strong> {{ car.distance|floatformat:2 }} km away</p>
                             {% else %}
@@ -213,7 +213,7 @@
             <div class="car-item">
                 <h3>{{ car.name }}</h3>
                 <p>{{ car.description }}</p>
-                <p class="price">Price per Km: Rs. {{ car.price_per_km }}</p>
+                <p class="price">Price per Day: Rs. {{ car.price_per_km }}</p>
                 {% if car.distance %}
                     <p><strong>Distance:</strong> {{ car.distance|floatformat:2 }} km away</p>
                 {% else %}

@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User
 
 class Car(models.Model):
     FUEL_TYPES = [
@@ -28,6 +31,9 @@ class Customer(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     address = models.TextField()
+    license_image = models.ImageField(upload_to='license_images/', null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.full_name
@@ -39,25 +45,33 @@ class Booking(models.Model):
     end_date = models.DateField(null=True, blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
 
-    # Storing the pickup and drop-off locations with lat/lon
-    from_location_lat = models.DecimalField(null=True, blank=True,max_digits=9, decimal_places=6)  # Example: 19.30000
-    from_location_lon = models.DecimalField(null=True, blank=True,max_digits=9, decimal_places=6)  # Example: 84.79000
-    to_location_lat = models.DecimalField(null=True, blank=True,max_digits=9, decimal_places=6)  # Example: 19.50000
-    to_location_lon = models.DecimalField(null=True, blank=True,max_digits=9, decimal_places=6)  # Example: 84.80000
-
     def __str__(self):
         return f'{self.customer.full_name} - {self.car.name}'
+
+
+class lat_long(models.Model):
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     
-    
-class lat_long(models.Model):
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """
+    Signal to create a UserProfile whenever a User is created.
+    """
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """
+    Signal to save the UserProfile whenever the User is saved.
+    """
+    instance.userprofile.save()
 class Payment(models.Model):
     token = models.CharField(max_length=100)
     amount = models.IntegerField()

@@ -43,30 +43,35 @@ class BookingView(LoginRequiredMixin, View):
             return redirect('login')
 
         car_id = request.POST.get('car_id')
-        car = Car.objects.get(id=car_id)  # Fetch the selected car
+        car = Car.objects.get(id=car_id)
 
-        customer = Customer.objects.create(
-            full_name=request.POST.get('billname'),
-            email=request.POST.get('billemail'),
-            phone=request.POST.get('billphone'),
-            address=request.POST.get('billaddress')
-        )
-
-        # Parse start and end dates from the form
         start_date = datetime.strptime(request.POST.get('date'), '%Y-%m-%d')
         end_date = datetime.strptime(request.POST.get('end_date'), '%Y-%m-%d')
 
-        # Calculate total days for the booking
         total_days = (end_date - start_date).days
 
         if total_days < 1:
-            # Ensure that the end date is after the start date
             return render(request, 'car/booking_form.html', {
                 'car': car, 
                 'error_message': 'The end date must be later than the start date.'
             })
 
-        # Calculate the total amount based on the number of days
+        # Capture latitude and longitude from the form
+        latitude = float(request.POST.get('latitude'))
+        longitude = float(request.POST.get('longitude'))
+
+        # Create the customer instance
+        customer = Customer.objects.create(
+            full_name=request.POST.get('billname'),
+            email=request.POST.get('billemail'),
+            phone=request.POST.get('billphone'),
+            address=request.POST.get('billaddress'),
+            license_image=request.FILES.get('license_image'),
+            latitude=latitude,  # Save latitude
+            longitude=longitude  # Save longitude
+        )
+
+        # Calculate the total amount based on the car price per day
         total_amount = car.price_per_km * total_days
 
         # Create the booking instance
@@ -78,11 +83,7 @@ class BookingView(LoginRequiredMixin, View):
             total_amount=total_amount,
         )
 
-        # Redirect to booking confirmation page with the booking ID
         return redirect('booking_confirmation', booking_id=booking.id)
-
-
-
 
 
 class BookingConfirmationView(LoginRequiredMixin, View):
@@ -183,6 +184,7 @@ class CarListView(ListView):
 
         # Return sorted cars by distance (if any valid location data) or all cars if no valid data
         return sorted(filtered_cars, key=lambda car: car.distance) if filtered_cars else cars
+    
 
 
 
@@ -295,6 +297,20 @@ def admin_booking_detail(request, booking_id):
     # Get the specific booking by ID
     booking = get_object_or_404(Booking, id=booking_id)
     return render(request, 'car/admin_booking_detail.html', {'booking': booking})
+
+class AcceptBookingView(View):
+    def post(self, request, booking_id):
+        booking = get_object_or_404(Booking, id=booking_id)
+        booking.status = 'Accepted'
+        booking.save()
+        return redirect('admin_booking_detail', booking_id=booking.id)
+
+class CancelBookingView(View):
+    def post(self, request, booking_id):
+        booking = get_object_or_404(Booking, id=booking_id)
+        booking.status = 'Cancelled'
+        booking.save()
+        return redirect('admin_booking_detail', booking_id=booking.id)
 
 def admin_booking_delete(request, booking_id):
     # Get the specific booking by ID

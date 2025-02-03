@@ -1,16 +1,108 @@
-<!-- admin_booking_detail.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Detail</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+        .details p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .details strong {
+            color: #555;
+        }
+        .license-image img {
+            max-width: 200px;
+            max-height: 200px;
+            display: block;
+            margin-top: 20px;
+        }
+        .actions {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .actions button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        .accept {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .cancel {
+            background-color: #f44336;
+            color: white;
+        }
+        .accept:hover {
+            background-color: #45a049;
+        }
+        .cancel:hover {
+            background-color: #e53935;
+        }
+    </style>
 </head>
 <body>
-    <h2>Booking Details</h2>
-    <p><strong>Booking ID:</strong> {{ booking.id }}</p>
-    <p><strong>Car:</strong> {{ booking.car.name }}</p>
-    <p><strong>Booking Date:</strong> {{ booking.booking_date }}</p>
-    <p><strong>Status:</strong> {{ booking.status }}</p>
+
+    <div class="container">
+        <h2>Booking Details</h2>
+        <div class="details">
+            <p><strong>Booking ID:</strong> {{ booking.id }}</p>
+            <p><strong>Car:</strong> {{ booking.car.name }}</p>
+            <p><strong>Start Date:</strong> {{ booking.start_date }}</p>
+            <p><strong>End Date:</strong> {{ booking.end_date }}</p>
+            <!-- <p><strong>Status:</strong> {{ booking.status }}</p> -->
+
+            <h3>Customer Information</h3>
+            <p><strong>Full Name:</strong> {{ booking.customer.full_name }}</p>
+            <p><strong>Email:</strong> {{ booking.customer.email }}</p>
+            <p><strong>Phone:</strong> {{ booking.customer.phone }}</p>
+            <p><strong>Address:</strong> {{ booking.customer.address }}</p>
+
+            <h3>License Image</h3>
+            <div class="license-image">
+                {% if booking.customer.license_image %}
+                    <img src="{{ booking.customer.license_image.url }}" alt="License Image">
+                {% else %}
+                    <p>No License Image Available</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- <div class="actions">
+            <form method="POST" action="{% url 'accept_booking' booking.id %}">
+                {% csrf_token %}
+                <button type="submit" class="accept">Accept</button>
+            </form>
+
+            <form method="POST" action="{% url 'cancel_booking' booking.id %}">
+                {% csrf_token %}
+                <button type="submit" class="cancel">Cancel</button>
+            </form>
+        </div> -->
+    </div>
+
 </body>
 </html>

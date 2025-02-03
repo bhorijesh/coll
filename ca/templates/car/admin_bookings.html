@@ -1,4 +1,3 @@
-<!-- admin_bookings.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,35 +53,8 @@
         /* Map Container */
         .map-container {
             width: 100%;
-            height: 300px;
+            height: 200px;
             margin: 20px 0;
-        }
-
-        /* Card Container (Optional, if you want overview cards) */
-        .card-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 30%;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .card h3 {
-            margin-bottom: 10px;
-            font-size: 24px;
-            color: #333;
-        }
-
-        .card p {
-            font-size: 18px;
-            color: #555;
         }
 
     </style>
@@ -97,7 +69,8 @@
             <tr>
                 <th>Booking ID</th>
                 <th>Customer</th>
-                <th>Car Model</th>
+                <th>License</th>
+                <th>Phone</th>
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Total Amount</th>
@@ -110,32 +83,29 @@
                 <tr>
                     <td>{{ booking.id }}</td>
                     <td>{{ booking.customer.full_name }}</td>
-                    <td>{{ booking.car.model }}</td>
+                    <td>
+                        {% if booking.customer.license_image %}
+                            <img src="{{ booking.customer.license_image.url }}" alt="License Image" style="max-width: 100px; max-height: 100px;">
+                        {% else %}
+                            No License Image Available
+                        {% endif %}
+                    </td>
+                    <td>{{ booking.customer.phone }}</td>
                     <td>{{ booking.start_date }}</td>
                     <td>{{ booking.end_date }}</td>
                     <td>{{ booking.total_amount }}</td>
                     <td>
                         <div class="map-container" id="map-{{ booking.id }}"></div>
                         <script>
-                            // Initialize map for each booking
-                            var map = L.map('map-{{ booking.id }}').setView([{{ booking.from_location_lat }}, {{ booking.from_location_lon }}], 13);
-                            
-                            // Add tile layer (OpenStreetMap)
+                            var map = L.map('map-{{ booking.id }}').setView([{{ booking.customer.latitude }}, {{ booking.customer.longitude }}], 13);
                             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             }).addTo(map);
-                            
-                            // Add markers for pickup and drop-off locations
-                            L.marker([{{ booking.from_location_lat }}, {{ booking.from_location_lon }}]).addTo(map)
-                                .bindPopup("<b>Pickup Location</b><br>{{ booking.from_location_lat }}, {{ booking.from_location_lon }}");
-                            
-                            L.marker([{{ booking.to_location_lat }}, {{ booking.to_location_lon }}]).addTo(map)
-                                .bindPopup("<b>Drop-off Location</b><br>{{ booking.to_location_lat }}, {{ booking.to_location_lon }}");
+                            L.marker([{{ booking.customer.latitude }}, {{ booking.customer.longitude }}]).addTo(map);
                         </script>
                     </td>
                     <td>
-                        <a href="{% url 'admin_booking_detail' booking.id %}">View</a> |
-                        <a href="{% url 'admin_booking_delete' booking.id %}">Delete</a>
+                        <a href="{% url 'admin_booking_delete' booking.id %}">Cancel</a>
                     </td>
                 </tr>
             {% endfor %}
