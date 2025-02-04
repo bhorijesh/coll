@@ -5,14 +5,29 @@ from django.http import JsonResponse
 from geopy.distance import geodesic  
 
 
-def get_nearby_cars(user_lat, user_lon, radius_km=10):
-    nearby_cars = []
-    for car in Car.objects.all():
-        distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
-        if distance <= radius_km:
-            nearby_cars.append(car)
-            return nearby_cars
+def nearby_cars(request):
+    try:
+        latitude = float(request.GET.get('latitude'))
+        longitude = float(request.GET.get('longitude'))
 
+        cars = Car.objects.all()
+        nearby_cars = []
+
+        for car in cars:
+            if car.latitude is not None and car.longitude is not None:
+                distance = haversine(latitude, longitude, car.latitude, car.longitude)
+                if distance <= 30:  # Only include cars within 10 km
+                    nearby_cars.append({
+                        'name': car.name,
+                        'distance': distance
+                    })
+
+        # Sort cars by distance
+        nearby_cars.sort(key=lambda x: x['distance'])
+
+        return JsonResponse({'cars': nearby_cars})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371.0  # Radius of the Earth in km
     dlat = radians(lat2 - lat1)

@@ -3,384 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Listings</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></script>    
+    <title>Car Booking</title>
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-    <style>
-        body {
-            background-color: #121212;
-            color: #f5f5f5;
-            font-family: Arial, sans-serif;
-        }
-        header {
-            background-color: #1e1e1e;
-            color: #ffffff;
-            padding: 20px 0;
-            text-align: center;
-        }
-        header h1 {
-            font-size: 36px;
-            margin: 0;
-        }
-        /* Navbar Styles */
-        nav {
-            background-color: #1e1e1e;
-            padding: 10px 0;
-        }
-        nav .navbar-brand {
-            color: #ffffff;
-            font-size: 24px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        nav .navbar-nav .nav-item .nav-link {
-            color: #ffffff;
-            font-size: 18px;
-            margin-right: 20px;
-            text-transform: uppercase;
-        }
-        nav .navbar-nav .nav-item .nav-link:hover {
-            color: #007bff;
-        }
-        nav .search-bar input {
-            border-radius: 20px;
-            padding: 8px 15px;
-            border: none;
-            width: 250px;
-        }
-        nav .search-bar button {
-            border-radius: 20px;
-            background-color: #007bff;
-            color: white;
-            padding: 8px 15px;
-            border: none;
-            font-size: 16px;
-        }
-        nav .search-bar button:hover {
-            background-color: #0056b3;
-        }
-        nav .auth-buttons a {
-            color: #ffffff;
-            background-color: #007bff;
-            padding: 8px 15px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            font-weight: bold;
-            text-decoration: none;
-            margin-left: 15px;
-        }
-        nav .auth-buttons a:hover {
-            background-color: #0056b3;
-        }
-
-        /* Car Container */
-        .car-container {
-            margin-top: 30px;
-        }
-
-        .car-card {
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            box-shadow: 0px 4px 8px rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s ease-in-out;
-            padding: 15px;
-        }
-
-        .car-card:hover {
-            transform: scale(1.03);
-        }
-
-        .car-card img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .car-card h5 {
-            font-size: 20px;
-            margin: 10px 0;
-            color: #ffffff;
-        }
-
-        .car-card p {
-            font-size: 16px;
-            color: #b0b0b0;
-            margin-bottom: 10px;
-        }
-
-        .car-card .btn {
-            background-color: #00aaff;
-            color: white;
-            width: 100%;
-            border-radius: 5px;
-        }
-
-        .car-card .btn:hover {
-            background-color: #0088cc;
-        }
-
-        /* Footer */
-        footer {
-            background-color: #1c1c1c;
-            color: #b0b0b0;
-            text-align: center;
-            padding: 15px;
-            margin-top: 40px;
-            font-size: 16px;
-        }
-
-        /* Map Section */
-        .map-section {
-            margin-top: 50px;
-        }
-
-        .map-card {
-            background: #1e1e1e;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .map-card .card-body {
-            padding: 30px;
-        }
-
-        .map-card .map-title {
-            font-size: 24px;
-            color: #fff;
-            font-weight: 500;
-            margin-bottom: 20px;
-        }
-
-        .map-card .map-description {
-            color: #ddd;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-
-        .map-card .map-footer {
-            text-align: center;
-            color: #aaa;
-            font-size: 14px;
-            padding: 10px 0;
-        }
-
-        .map-card .map-footer a {
-            color: #00aaff;
-            text-decoration: none;
-        }
-
-        .map-card .map-footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Hide Latitude and Longitude Inputs */
-        #id_latitude, #id_longitude {
-            display: none;
-        }
-
-        .map-card .btn-search-location {
-            width: 100%;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        .map-card .btn-search-location:hover {
-            background-color: #0056b3;
-        }
-
-        /* Make map bigger */
-        #map {
-            height: 600px; /* Increased height for a more professional look */
-            border-radius: 12px;
-            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Geocoding Plugin CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 </head>
-<body>
-    <header>
-        <h1>Welcome to Car Booking</h1>
-    </header>
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container">
-        <a class="navbar-brand" href="{% url 'index' %}">Car Booking</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <!-- <a class="nav-link" href="{% url 'car_list' %}">Cars</a> -->
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'about_us' %}">About Us</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'contact_us' %}">Contact</a>
-                </li>
-            </ul>
-
+<body class="bg-gray-900 text-white font-sans">
+    <!-- Navbar -->
+    <nav class="navbar bg-gradient-to-r from-gray-800 to-gray-900 shadow-lg">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="{% url 'index' %}" class="text-2xl font-bold text-blue-400 hover:text-blue-500 transition duration-300">Car Booking</a>
+            <!-- Nav Links -->
+            <div class="hidden md:flex space-x-6 text-gray-300">
+                <a href="{% url 'about_us' %}" class="hover:text-white transition duration-300">About Us</a>
+                <a href="{% url 'contact_us' %}" class="hover:text-white transition duration-300">Contact</a>
+            </div>
             <!-- Search Bar -->
-            <form class="d-flex ms-3 search-bar" method="GET" action="{% url 'car_search' %}">
-                <input class="form-control me-2" type="search" placeholder="Search cars..." name="search">
-                <button class="btn" type="submit">Search</button>
+            <form method="GET" action="{% url 'car_search' %}" class="flex items-center">
+                <input type="search" name="search" placeholder="Search cars..." class="px-4 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition duration-300">Search</button>
             </form>
-
             <!-- Login/Logout Buttons -->
-            <div class="auth-buttons ms-3">
+            <div class="flex space-x-4">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'logout_page' %}" class="btn">Logout</a>
+                    <a href="{% url 'logout_page' %}" class="text-red-500 hover:text-red-600 transition duration-300">Logout</a>
                 {% else %}
-                    <a href="{% url 'login' %}" class="btn">Login</a>
+                    <a href="{% url 'login' %}" class="text-green-500 hover:text-green-600 transition duration-300">Login</a>
                 {% endif %}
             </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<!-- Latitude and Longitude Form -->
-<div class="container map-form">
-    <form id="lat-lng-form" onsubmit="return false;">
-        <!-- Hidden Latitude and Longitude Inputs -->
-        <input type="text" id="id_latitude" name="latitude" placeholder="Latitude" readonly>
-        <input type="text" id="id_longitude" name="longitude" placeholder="Longitude" readonly>
-    </form>
-</div>
+    <!-- Main Content -->
+    <header class="text-center py-8">
+        <h1 class="text-4xl font-bold text-white">Welcome to Car Booking</h1>
+        <p class="mt-2 text-gray-400">Find your perfect ride today!</p>
+    </header>
 
-<!-- Map Section -->
-<div class="container map-section">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 col-md-10">
-            <div class="map-card">
-                <div class="card-body">
-                    <h3 class="map-title">Select a Location on the Map</h3>
-                    <p class="map-description">Click anywhere on the map to choose a location. The latitude and longitude will be automatically updated.</p>
-                    <div id="map"></div>
-                    <button type="button" class="btn-search-location" onclick="saveLocation()">Search Nearest Car</button>
-                </div>
-                <div class="map-footer">
-                    <p><span id="lat-lng-info">Latitude: 0, Longitude: 0</span></p>
-                </div>
-            </div>
+    <!-- Map Section -->
+    <div id="map" class="w-full h-[500px] mx-auto mb-6 border-2 border-gray-700 rounded-lg shadow-lg"></div>
+    <p class="text-center mt-4 text-gray-400">Latitude: <span id="latitude">{{ user_lat }}</span>, Longitude: <span id="longitude">{{ user_lon }}</span></p>
+
+    <!-- Nearby Cars Section -->
+    <div class="car-info mx-auto max-w-7xl mt-6 p-6 bg-gray-800 rounded-lg shadow-lg">
+        <h3 class="text-2xl font-semibold text-white mb-6">Nearby Cars</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Nearby cars will be dynamically added here -->
         </div>
     </div>
-</div>
 
-<!-- Car List Section
-<div class="container car-container">
-    <h2 class="text-center mb-4">Available Cars</h2>
-    <div class="row">
-        {% for car in car_list %}
-            <div class="col-md-4 mb-4">
-                <div class="car-card p-3">
-                    <img src="{{ car.image.url }}" alt="{{ car.name }}">
-                    <h5>{{ car.name }}</h5>
-                    <p><strong>Type:</strong> {{ car.car_type }}</p>
-                    <p><strong>Seats:</strong> {{ car.seating_capacity }}</p>
-                    <p><strong>Fuel Type:</strong> {{ car.fuel_type }}</p>
-                    <p><strong>Price:</strong> Rs. {{ car.price_per_km }} per km</p>
-                    <p><strong>Available:</strong> {% if car.is_available %} Yes {% else %} No {% endif %}</p>
-                    {% if car.id %}
-                        <a href="{% url 'car_details' car.id %}" class="btn">View Details</a>
-                    {% else %}
-                        <p>Details not available.</p>
-                    {% endif %}
-                </div>
-            </div>
-        {% empty %}
-            <p class="text-center">No cars available at the moment.</p>
-        {% endfor %}
-    </div>
-</div> -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Geocoding Plugin JS -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([0, 0], 2); // Default view (worldwide)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-<script>
-    // Initialize the map, set to a default location (Kathmandu, Nepal)
-    var map = L.map('map').setView([27.7172, 85.3240], 13); 
+        // Add geocoding control to the map
+        const geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false
+        }).addTo(map);
 
-    // Add OpenStreetMap tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+        geocoder.on('markgeocode', function(event) {
+            const { latlng } = event.geocode;
 
-    var marker;
+            // Move the map view to the searched location
+            map.setView(latlng, 15);
 
-    // Function to handle map click
-    function onMapClick(e) {
-        // Check if marker already exists
-        if (!marker) {
-            // Add a marker at the clicked position and make it draggable
-            marker = L.marker(e.latlng, {draggable: true}).addTo(map);
-            // Update the latitude and longitude fields in the form
-            document.getElementById('id_latitude').value = e.latlng.lat;
-            document.getElementById('id_longitude').value = e.latlng.lng;
-            // Display latitude and longitude on the map
-            document.getElementById('lat-lng-info').innerText = `Latitude: ${e.latlng.lat}, Longitude: ${e.latlng.lng}`;
-        } else {
-            // If marker already exists, update its position
-            marker.setLatLng(e.latlng);
-            // Update the latitude and longitude fields
-            document.getElementById('id_latitude').value = e.latlng.lat;
-            document.getElementById('id_longitude').value = e.latlng.lng;
-            // Update the displayed latitude and longitude
-            document.getElementById('lat-lng-info').innerText = `Latitude: ${e.latlng.lat}, Longitude: ${e.latlng.lng}`;
-        }
-    }
-
-    // Attach the map click event
-    map.on('click', onMapClick);
-
-    // Function to handle the "Search near Location" button click
-    function saveLocation() {
-        var latitude = document.getElementById('id_latitude').value;
-        var longitude = document.getElementById('id_longitude').value;
-
-        // Check if latitude and longitude are set
-        if (latitude && longitude) {
-            // AJAX request to send location data to the server
-            fetch('{% url "save_location" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}',
-                },
-                body: JSON.stringify({
-                    latitude: latitude,
-                    longitude: longitude
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // No popup message on success
-                window.location.href = "{% url 'car_list' %}";    
-            })
-            .catch(error => {
-                console.error('Error:', error);
+            // Clear any existing markers
+            map.eachLayer((layer) => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
             });
-        } else {
-            alert('Please select a valid location on the map.');
-        }
-    }
-</script>
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
 
+            // Add a new marker at the searched location
+            L.marker(latlng).addTo(map);
+
+            // Simulate a manual click on the map at the searched location
+            const simulatedClickEvent = {
+                latlng: latlng
+            };
+            map.fire('click', simulatedClickEvent);
+        });
+
+        // Function to update the map with the device's location
+        function updateDeviceLocation(lat, lng) {
+            document.getElementById('latitude').textContent = lat.toFixed(6);
+            document.getElementById('longitude').textContent = lng.toFixed(6);
+
+            // Clear any existing markers
+            map.eachLayer((layer) => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Add a new marker at the device's location
+            L.marker([lat, lng]).addTo(map);
+            map.setView([lat, lng], 15); // Zoom to the device's location
+
+            // Fetch nearby cars from the server
+            fetchNearbyCars(lat, lng);
+        }
+
+        // Allow manual location selection by clicking on the map
+        map.on('click', function(event) {
+            const { lat, lng } = event.latlng;
+            updateDeviceLocation(lat, lng);
+        });
+
+        // Function to fetch nearby cars from the server
+        function fetchNearbyCars(lat, lng) {
+            fetch(`/nearby-cars/?latitude=${lat}&longitude=${lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    const carTable = document.querySelector('.grid');
+                    carTable.innerHTML = ''; // Clear the current list
+                    if (data.cars && data.cars.length > 0) {
+                        // Sort cars by distance (nearest first)
+                        data.cars.sort((a, b) => a.distance - b.distance);
+                        data.cars.forEach(car => {
+                            const carCard = document.createElement('div');
+                            carCard.classList.add('bg-gray-700', 'rounded-lg', 'shadow-lg', 'overflow-hidden', 'transition', 'duration-300', 'hover:shadow-xl', 'hover:scale-105');
+                            carCard.innerHTML = `
+                                <img src="${car.image_url || 'https://via.placeholder.com/400'}" alt="${car.name}" class="w-full h-48 object-cover">
+                                <div class="p-4">
+                                    <h4 class="text-lg font-semibold text-white">${car.name}</h4>
+                                    <p class="text-sm text-gray-400"><strong>Year:</strong> ${car.year}</p>
+                                    <p class="text-sm text-gray-400"><strong>Fuel Type:</strong> ${car.fuel_type}</p>
+                                    <p class="text-sm text-gray-400"><strong>Seating Capacity:</strong> ${car.seating_capacity} seats</p>
+                                    <p class="text-sm text-gray-400"><strong>Price per Day:</strong> $${car.price_per_km}</p>
+                                    <p class="text-sm text-gray-400"><strong>Availability:</strong> 
+                                        ${car.is_available ? '<span class="text-green-500">Available</span>' : '<span class="text-red-500">Not Available</span>'}
+                                    </p>
+                                    <p class="text-sm text-gray-400"><strong>Description:</strong> ${car.description}</p>
+                                    <p class="text-sm text-gray-400"><strong>Distance:</strong> ${car.distance.toFixed(2)} km</p>
+                                    <div class="flex justify-between mt-4">
+                                        <a href="/car/${car.id}/" class="text-blue-500 hover:text-blue-600 transition duration-300">View Details</a>
+                                        <a href="/booking/?car_id=${car.id}&latitude=${lat}&longitude=${lng}" class="text-green-500 hover:text-green-600 transition duration-300">Book Now</a>
+                                    </div>
+                                </div>
+                            `;
+                            carTable.appendChild(carCard);
+                        });
+                    } else {
+                        carTable.innerHTML = '<p class="no-cars text-center text-gray-500 col-span-full">No cars found nearby.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching nearby cars:', error);
+                    document.querySelector('.grid').innerHTML = '<p class="no-cars text-center text-red-500 col-span-full">Error fetching cars.</p>';
+                });
+        }
+
+        // Automatically fetch device location on page load
+        window.onload = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        updateDeviceLocation(latitude, longitude);
+                    },
+                    (error) => {
+                        console.error('Error getting location:', error.message);
+                        alert('Unable to retrieve your location. Using default location.');
+                        // Fallback to a default location (e.g., New York)
+                        updateDeviceLocation(40.7128, -74.0060);
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser. Using default location.');
+                // Fallback to a default location (e.g., New York)
+                updateDeviceLocation(40.7128, -74.0060);
+            }
+        };
+    </script>
 </body>
 </html>

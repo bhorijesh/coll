@@ -226,14 +226,28 @@
                 {% else %}
                     <p>No image available</p>
                 {% endif %}
-                <p><a href="{% url 'booking_view' %}?car_id={{ car.id }}" class="btn btn-primary">Book Now</a></p>
-            </div>
+                <p>
+                    <a href="{% url 'booking_view' %}?car_id={{ car.id }}&latitude={{ latitude }}&longitude={{ longitude }}" class="btn btn-primary">
+                        Book Now
+                    </a>
+                </p>            </div>
             {% endfor %}
         </div>
     {% else %}
         <p>No cars available.</p>
     {% endif %}
 </div>
+
+<script>
+    // Retrieve latitude and longitude from sessionStorage
+    const latitude = sessionStorage.getItem('latitude');
+    const longitude = sessionStorage.getItem('longitude');
+
+    // If latitude and longitude are available, display them
+    if (latitude && longitude) {
+        document.getElementById('selected-location').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
+    }
+</script>
 
 <footer>
     <p>&copy; 2025 Car Booking Inc. | All Rights Reserved</p>

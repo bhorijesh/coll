@@ -29,6 +29,7 @@ urlpatterns = [
     path('car/<int:car_id>/', car_details, name='car_details'),
     path('cars/search', car_search, name='car_search'),
     path('save-location/', views.save_lat_long, name='save_lat_long'),
+    path('nearby-cars/', views.nearby_cars, name='nearby_cars'),
     path('api/get_nearby_cars/', get_nearby_cars, name='get_nearby_cars'),
     path('save-location/', save_location, name='save_location'),
     path('booking/<int:booking_id>/accept/', views.AcceptBookingView.as_view(), name='accept_booking'),

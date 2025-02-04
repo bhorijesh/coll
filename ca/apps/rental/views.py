@@ -29,14 +29,75 @@ class index(ListView):
     template_name = 'car/index.html'
     context_object_name = 'car_list'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Default values for latitude and longitude
+        context['user_lat'] = 0
+        context['user_lon'] = 0
+        return context
+
+
+def nearby_cars(request):
+    """
+    API endpoint to fetch nearby cars based on the device's current location.
+    """
+    try:
+        # Get latitude and longitude from the query parameters
+        user_lat = float(request.GET.get('latitude'))
+        user_lon = float(request.GET.get('longitude'))
+    except (ValueError, TypeError):
+        # If latitude or longitude is invalid, return an error response
+        return JsonResponse({'error': 'Invalid latitude or longitude'}, status=400)
+
+    # Fetch all cars from the database
+    cars = Car.objects.all()
+
+    # Calculate distances and filter nearby cars
+    nearby_cars_list = []
+    for car in cars:
+        if car.latitude is not None and car.longitude is not None:
+            distance = geodesic((user_lat, user_lon), (car.latitude, car.longitude)).km
+            if distance <= 50:  # Only include cars within 50 km
+                nearby_cars_list.append({
+                    'id': car.id,
+                    'name': car.name,
+                    'year': car.year,
+                    'fuel_type': car.fuel_type,
+                    'seating_capacity': car.seating_capacity,
+                    'price_per_km': str(car.price_per_km),
+                    'is_available': car.is_available,
+                    'description': car.description,
+                    'image_url': car.image.url if car.image else None,
+                    'distance': round(distance, 2),
+                })
+
+    # Return the list of nearby cars as JSON
+    return JsonResponse({'cars': nearby_cars_list})
+
 class BookingView(LoginRequiredMixin, View):
     def get(self, request):
-        car_id = request.GET.get('car_id')  # Fetch car_id from query parameters
+        # Fetch car_id, latitude, and longitude from query parameters
+        car_id = request.GET.get('car_id')
+        latitude = request.GET.get('latitude')
+        longitude = request.GET.get('longitude')
+
         if not car_id:
             return redirect('home')  # Redirect if no car_id is provided
 
         car = get_object_or_404(Car, id=car_id)
-        return render(request, 'car/booking_form.html', {'car': car})
+
+        # If no latitude or longitude is provided, fallback to default or error
+        if latitude is None or longitude is None:
+            return render(request, 'car/booking_form.html', {
+                'car': car,
+                'error_message': 'No location data found.'
+            })
+        
+        return render(request, 'car/booking_form.html', {
+            'car': car,
+            'latitude': latitude,
+            'longitude': longitude
+        })
 
     def post(self, request):
         if not request.user.is_authenticated:
@@ -142,17 +203,15 @@ class CarDeleteView(LoginRequiredMixin, DeleteView):
 class CarListView(ListView):
     model = Car
     template_name = 'car/car_list.html'
-    context_object_name = 'cars'  # Use this context variable in your template
+    context_object_name = 'cars'
 
     def get_queryset(self):
         # Retrieve saved location from the session
         user_lat = self.request.session.get('saved_latitude')
         user_lon = self.request.session.get('saved_longitude')
 
-        # Check if the saved location exists in the session
         if user_lat is None or user_lon is None:
-            print("Saved location not found in session.")
-            return Car.objects.all()  # Return all cars if location is missing
+            return Car.objects.all()  # Return all cars if no location found in session
 
         try:
             # Ensure the latitude and longitude values are floats
@@ -160,30 +219,30 @@ class CarListView(ListView):
             user_lon = float(user_lon)
         except ValueError:
             # If conversion fails, return all cars
-            print("Invalid latitude or longitude format in session.")
             return Car.objects.all()
 
-        # Get all cars from the database
         cars = Car.objects.all()
-
-        # Add a distance attribute to each car based on the saved location
         for car in cars:
             if car.latitude is not None and car.longitude is not None:
-                # Calculate distance only if the car has location data
                 car.distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
             else:
-                # No distance for cars with no location data
                 car.distance = None
-                print(f"Car {car.name} has no location data")
 
-        # Exclude cars with None distance and sort by distance (nearest first)
         filtered_cars = [car for car in cars if car.distance is not None]
-
-        if not filtered_cars:
-            print("No cars with valid locations found")
-
-        # Return sorted cars by distance (if any valid location data) or all cars if no valid data
         return sorted(filtered_cars, key=lambda car: car.distance) if filtered_cars else cars
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Add the user's latitude and longitude from the session to the context
+        user_lat = self.request.session.get('saved_latitude')
+        user_lon = self.request.session.get('saved_longitude')
+
+        context['user_lat'] = user_lat
+        context['user_lon'] = user_lon
+
+        return context
+
     
 
 
