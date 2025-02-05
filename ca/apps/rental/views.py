@@ -20,6 +20,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import math
 from .models import *
+from django.utils import timezone
+
 from .utils import *
 from .forms import *
 from django.conf import settings
@@ -74,18 +76,17 @@ def nearby_cars(request):
     # Return the list of nearby cars as JSON
     return JsonResponse({'cars': nearby_cars_list})
 
+from datetime import datetime, timedelta
+
 class BookingView(LoginRequiredMixin, View):
     def get(self, request):
         # Fetch car_id, latitude, and longitude from query parameters
         car_id = request.GET.get('car_id')
         latitude = request.GET.get('latitude')
         longitude = request.GET.get('longitude')
-
         if not car_id:
             return redirect('home')  # Redirect if no car_id is provided
-
         car = get_object_or_404(Car, id=car_id)
-
         # If no latitude or longitude is provided, fallback to default or error
         if latitude is None or longitude is None:
             return render(request, 'car/booking_form.html', {
@@ -104,22 +105,46 @@ class BookingView(LoginRequiredMixin, View):
             return redirect('login')
 
         car_id = request.POST.get('car_id')
-        car = Car.objects.get(id=car_id)
+        car = get_object_or_404(Car, id=car_id)
 
-        start_date = datetime.strptime(request.POST.get('date'), '%Y-%m-%d')
-        end_date = datetime.strptime(request.POST.get('end_date'), '%Y-%m-%d')
-
-        total_days = (end_date - start_date).days
-
-        if total_days < 1:
+        # Parse start_date and end_date
+        try:
+            start_date = datetime.strptime(request.POST.get('date'), '%Y-%m-%d').date()
+            end_date = datetime.strptime(request.POST.get('end_date'), '%Y-%m-%d').date()
+        except ValueError:
             return render(request, 'car/booking_form.html', {
-                'car': car, 
+                'car': car,
+                'error_message': 'Invalid date format. Please use YYYY-MM-DD.'
+            })
+
+        # Validate dates
+        if start_date >= end_date:
+            return render(request, 'car/booking_form.html', {
+                'car': car,
                 'error_message': 'The end date must be later than the start date.'
             })
 
         # Capture latitude and longitude from the form
-        latitude = float(request.POST.get('latitude'))
-        longitude = float(request.POST.get('longitude'))
+        try:
+            latitude = float(request.POST.get('latitude'))
+            longitude = float(request.POST.get('longitude'))
+        except ValueError:
+            return render(request, 'car/booking_form.html', {
+                'car': car,
+                'error_message': 'Invalid latitude or longitude.'
+            })
+
+        # Calculate the total amount based on the car price per day
+        total_days = (end_date - start_date).days
+        base_amount = car.price_per_km * total_days
+
+        # Apply discount or surcharge based on booking difference
+        current_date = timezone.now().date()
+        booking_difference = (start_date - current_date).days
+        if booking_difference >= 5:
+            total_amount = base_amount * Decimal('0.9')  # 10% discount
+        else:
+            total_amount = base_amount * Decimal('1.05')  # 5% surcharge
 
         # Create the customer instance
         customer = Customer.objects.create(
@@ -128,24 +153,27 @@ class BookingView(LoginRequiredMixin, View):
             phone=request.POST.get('billphone'),
             address=request.POST.get('billaddress'),
             license_image=request.FILES.get('license_image'),
-            latitude=latitude,  # Save latitude
-            longitude=longitude  # Save longitude
+            latitude=latitude,
+            longitude=longitude
         )
-
-        # Calculate the total amount based on the car price per day
-        total_amount = car.price_per_km * total_days
 
         # Create the booking instance
         booking = Booking.objects.create(
             car=car,
+            user=request.user,  # Assign the logged-in user to the booking
             customer=customer,
             start_date=start_date,
             end_date=end_date,
-            total_amount=total_amount,
+            total_amount=total_amount
         )
 
         return redirect('booking_confirmation', booking_id=booking.id)
-
+    
+@login_required
+def your_booking_list(request):
+    # Fetch bookings for the logged-in user
+    bookings = request.user.bookings.all()  # Use 'bookings' instead of 'booking_set'
+    return render(request, 'car/useerbooking.html', {'bookings': bookings})
 
 class BookingConfirmationView(LoginRequiredMixin, View):
     def get(self, request, booking_id):

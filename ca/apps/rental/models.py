@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
+from django.conf import settings
 
 class Car(models.Model):
     FUEL_TYPES = [
@@ -40,6 +41,11 @@ class Customer(models.Model):
 
 class Booking(models.Model):
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Links to the User model
+        on_delete=models.CASCADE,
+        related_name='bookings'  # Explicitly define the reverse relationship name
+    )
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)

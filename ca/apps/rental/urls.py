@@ -10,6 +10,7 @@ urlpatterns = [
     path('login/', views.LoginUserWithCreation.as_view(), name='login'),
     path('car/create/', views.CarCreateView.as_view(), name='car_create'),
     path('booking/', views.BookingView.as_view(), name='booking_view'),
+    path('your-bookings/', views.your_booking_list, name='your_booking_list'),
     path('booking/confirmation/<int:booking_id>/', views.BookingConfirmationView.as_view(), name='booking_confirmation'),
     path('calculate_distance/', views.calculate_distance, name='calculate_distance'),
     path('cars/', views.CarListView.as_view(), name='car_list'),
