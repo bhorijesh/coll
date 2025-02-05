@@ -5,8 +5,10 @@ from . import views
 from .views import *
 
 urlpatterns = [
-    path('', views.index.as_view(), name='index'),
+    path('', views.landing_page, name='landing_page'),
+    path('index/', views.index.as_view(), name='index'),
     path('admin/home/', views.admin_homepage, name='admin_homepage'),
+    path('bookings/pay/<int:booking_id>/', process_payment, name='process_payment'),
     path('login/', views.LoginUserWithCreation.as_view(), name='login'),
     path('car/create/', views.CarCreateView.as_view(), name='car_create'),
     path('booking/', views.BookingView.as_view(), name='booking_view'),
@@ -14,6 +16,7 @@ urlpatterns = [
     path('booking/confirmation/<int:booking_id>/', views.BookingConfirmationView.as_view(), name='booking_confirmation'),
     path('calculate_distance/', views.calculate_distance, name='calculate_distance'),
     path('cars/', views.CarListView.as_view(), name='car_list'),
+    path('bookings/<int:booking_id>/delete/', user_delete_booking, name='user_delete_booking'),
     path('register/', views.RegisterView.as_view(), name='register'),
     path('about/', views.AboutUsView.as_view(), name='about_us'),
     path('contact/', views.ContactUsView.as_view(), name='contact_us'),
@@ -23,11 +26,13 @@ urlpatterns = [
     path('car/edit/<int:pk>/', views.CarUpdateView.as_view(), name='car_update'),
     path('car/delete/<int:pk>/', views.CarDeleteView.as_view(), name='car_delete'),
     path('bookings/', views.admin_bookings, name='admin_bookings'),
+    path('bookings/<int:booking_id>/verify/', admin_verify_booking, name='admin_verify_booking'),
     path('bookings/<int:booking_id>/', views.admin_booking_detail, name='admin_booking_detail'),
     path('bookings/delete/<int:booking_id>/', views.admin_booking_delete, name='admin_booking_delete'),
     path('settings/', views.admin_settings, name='admin_settings'),
     path('change-password/', views.password_change, name='admin_password_change'),
     path('car/<int:car_id>/', car_details, name='car_details'),
+    path('bookings/<int:booking_id>/cancel/', user_cancel_booking, name='user_cancel_booking'),
     path('cars/search', car_search, name='car_search'),
     path('save-location/', views.save_lat_long, name='save_lat_long'),
     path('nearby-cars/', views.nearby_cars, name='nearby_cars'),

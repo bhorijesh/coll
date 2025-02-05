@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Landing Page</title>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #6a11cb, #2575fc);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Navbar Styles */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: rgba(0, 0, 0, 0.6);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 999;
+        }
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6f61;
+        }
+        .navbar .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+        }
+        .navbar .nav-links a {
+            text-decoration: none;
+            color: white;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+        }
+        .navbar .nav-links a:hover {
+            color: #ff6f61;
+        }
+        /* Main Content Styles */
+        .container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            margin-top: 100px;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1rem;
+            color: #fff;
+            background-color: #ff6f61;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        button:hover {
+            background-color: #e0564b;
+            transform: scale(1.05);
+        }
+        #locationStatus {
+            margin-top: 20px;
+            font-size: 1rem;
+        }
+        /* Background Image */
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            filter: blur(5px);
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">CarFinder</div>
+        <ul class="nav-links">
+            <li><a href="#">Home</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Contact</a></li>
+        </ul>
+    </nav>
+    <!-- Background Image -->
+    <div class="background-image"></div>
+    <!-- Main Content -->
+    <div class="container">
+        <h1>Welcome to CarFinder</h1>
+        <p>Find the best cars near your location</p>
+        <button id="findCarBtn">Find a Nearby Car</button>
+        <p id="locationStatus"></p>
+    </div>
+    <script>
+        document.getElementById('findCarBtn').addEventListener('click', function() {
+            const status = document.getElementById('locationStatus');
+
+            // Check if geolocation is supported by the browser
+            if (navigator.geolocation) {
+                status.textContent = "Allow access to your location...";
+
+                // Prompt the user to allow location access
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // Extract latitude and longitude from the position object
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+
+                        // Redirect to the Django 'index' path with latitude and longitude as query parameters
+                        window.location.href = `/index/?latitude=${latitude}&longitude=${longitude}`;
+                    },
+                    function(error) {
+                        // Handle errors (e.g., user denies location access)
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                status.textContent = "You denied the location request. Please allow location access to proceed.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                status.textContent = "Location information is unavailable.";
+                                break;
+                            case error.TIMEOUT:
+                                status.textContent = "The request to get your location timed out.";
+                                break;
+                            default:
+                                status.textContent = "An unknown error occurred while retrieving your location.";
+                                break;
+                        }
+                    }
+                );
+            } else {
+                // Geolocation is not supported by the browser
+                status.textContent = "Geolocation is not supported by this browser.";
+            }
+        });
+    </script>
+</body>
+</html>

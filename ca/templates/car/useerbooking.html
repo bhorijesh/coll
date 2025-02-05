@@ -7,48 +7,93 @@
     <title>Your Booking List</title>
     <!-- Tailwind CSS (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles for Dark Theme */
+        body {
+            background-color: #121212; /* Dark Background */
+            color: #e0e0e0; /* Light Text */
+        }
+        .card {
+            background-color: #1e1e1e; /* Slightly lighter than background */
+            border: 1px solid #333; /* Subtle border */
+        }
+        .status-pending {
+            color: #facc15; /* Yellow for Pending */
+        }
+        .status-verified {
+            color: #4ade80; /* Green for Verified */
+        }
+        .status-paid {
+            color: #60a5fa; /* Blue for Paid */
+        }
+        .status-cancelled {
+            color: #ef4444; /* Red for Cancelled */
+        }
+        .notification {
+            color: #ef4444; /* Red text for notifications */
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        .btn-cancel {
+            background-color: #ef4444; /* Red button */
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn-cancel:hover {
+            background-color: #b91c1c; /* Darker red on hover */
+        }
+        .btn-delete {
+            background-color: #7f1d1d; /* Dark red button */
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn-delete:hover {
+            background-color: #441313; /* Even darker red on hover */
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-white font-sans">
-    <!-- Include the Navbar -->
-<!-- templates/navbar.html -->
-<nav class="navbar bg-gradient-to-r from-gray-800 to-gray-900 shadow-lg">
-    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <!-- Logo -->
-        <a href="{% url 'index' %}" class="text-2xl font-bold text-blue-400 hover:text-blue-500 transition duration-300">Car Booking</a>
-        <!-- Nav Links -->
-        <div class="hidden md:flex space-x-6 text-gray-300">
-            <a href="{% url 'index' %}" class="hover:text-white transition duration-300">Home</a>
-            <a href="{% url 'about_us' %}" class="hover:text-white transition duration-300">About Us</a>
-            <a href="{% url 'contact_us' %}" class="hover:text-white transition duration-300">Contact</a>
-            <!-- Show "Your Booking List" only if the user is authenticated -->
-            {% if user.is_authenticated %}
-                <a href="{% url 'your_booking_list' %}" class="hover:text-white transition duration-300">Your Booking List</a>
-            {% endif %}
+<body class="bg-black text-white font-sans">
+    <!-- Navbar -->
+    <nav class="navbar bg-gray-900 shadow-lg">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="{% url 'index' %}" class="text-2xl font-bold text-blue-400 hover:text-blue-500 transition duration-300">Car Booking</a>
+            <!-- Nav Links -->
+            <div class="hidden md:flex space-x-6 text-gray-300">
+                <a href="{% url 'index' %}" class="hover:text-white transition duration-300">Home</a>
+                <a href="{% url 'about_us' %}" class="hover:text-white transition duration-300">About Us</a>
+                <a href="{% url 'contact_us' %}" class="hover:text-white transition duration-300">Contact</a>
+                <!-- Show "Your Booking List" only if the user is authenticated -->
+                {% if user.is_authenticated %}
+                    <a href="{% url 'your_booking_list' %}" class="hover:text-white transition duration-300">Your Booking List</a>
+                {% endif %}
+            </div>
+            <!-- Login/Logout Buttons -->
+            <div class="flex space-x-4 items-center">
+                {% if user.is_authenticated %}
+                    <!-- Display username -->
+                    <span class="text-gray-400">Hello, {{ user.username }}</span>
+                    <a href="{% url 'logout_page' %}" class="text-red-500 hover:text-red-600 transition duration-300">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-green-500 hover:text-green-600 transition duration-300">Login</a>
+                {% endif %}
+            </div>
         </div>
-        <!-- Search Bar -->
-        <form method="GET" action="{% url 'car_search' %}" class="flex items-center">
-            <input type="search" name="search" placeholder="Search cars..." class="px-4 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition duration-300">Search</button>
-        </form>
-        <!-- Login/Logout Buttons -->
-        <div class="flex space-x-4 items-center">
-            {% if user.is_authenticated %}
-                <!-- Display username -->
-                <span class="text-gray-400">Hello, {{ user.username }}</span>
-                <a href="{% url 'logout_page' %}" class="text-red-500 hover:text-red-600 transition duration-300">Logout</a>
-            {% else %}
-                <a href="{% url 'login' %}" class="text-green-500 hover:text-green-600 transition duration-300">Login</a>
-            {% endif %}
-        </div>
-    </div>
-</nav>
-
+    </nav>
     <!-- Your Booking List Content -->
     <div class="container mx-auto p-6">
         <h1 class="text-3xl font-bold text-white mb-6">Your Booking List</h1>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             {% for booking in bookings %}
-            <div class="bg-gray-700 rounded-lg shadow-lg p-4">
+            <div class="card rounded-lg shadow-lg p-4">
                 {% if booking.car.image %}
                 <img src="{{ booking.car.image.url }}" alt="{{ booking.car.name }}" class="w-full h-48 object-cover mt-4 rounded-md">
                 {% else %}
@@ -58,7 +103,42 @@
                 <p><strong>Start Date:</strong> {{ booking.start_date }}</p>
                 <p><strong>End Date:</strong> {{ booking.end_date }}</p>
                 <p><strong>Price:</strong> {{ booking.total_amount }}</p>
-                <p><strong>Status:</strong> {{ booking.status }}</p>
+                <p><strong>Status:</strong> 
+                    {% if booking.status == 'pending' %}
+                        <span class="status-pending">Pending</span>
+                    {% elif booking.status == 'verified' %}
+                        <span class="status-verified">Verified</span>
+                    {% elif booking.status == 'paid' %}
+                        <span class="status-paid">Paid</span>
+                    {% elif booking.status == 'cancelled' %}
+                        <span class="status-cancelled">Cancelled</span>
+                    {% endif %}
+                </p>
+                <!-- Show Notification for Cancelled Bookings -->
+                {% if booking.status == 'cancelled' and booking.notification %}
+                    <p class="notification">{{ booking.notification }}</p>
+                {% endif %}
+                <!-- Show Pay Button Only for Verified Bookings -->
+                {% if booking.status == 'verified' %}
+                <form action="{% url 'process_payment' booking.id %}" method="POST" class="mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300">
+                        Pay Now
+                    </button>
+                </form>
+                {% endif %}
+                <!-- Show Cancel Button for Pending or Verified Bookings -->
+                {% if booking.status in 'pending verified' %}
+                <form action="{% url 'user_cancel_booking' booking.id %}" method="POST" class="mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-cancel">Cancel Booking</button>
+                </form>
+                {% endif %}
+                <!-- Show Delete Button -->
+                <form action="{% url 'user_delete_booking' booking.id %}" method="POST" class="mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-delete">Delete Booking</button>
+                </form>
             </div>
             {% empty %}
             <p class="text-gray-400 col-span-full text-center">No bookings found.</p>

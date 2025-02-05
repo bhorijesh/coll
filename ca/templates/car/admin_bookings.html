@@ -7,7 +7,9 @@
     <!-- Leaflet CSS and JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-
+    <!-- Lightbox for Zooming License Image -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
     <style>
         /* Reset and Basic Styles */
         * {
@@ -15,54 +17,71 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f8f9fc;
             color: #333;
             line-height: 1.6;
         }
-
         h1 {
             font-size: 32px;
             margin-bottom: 20px;
         }
-
         /* Table Styles */
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 40px;
         }
-
         table th, table td {
             padding: 12px;
             text-align: center;
             border: 1px solid #ddd;
         }
-
         table th {
             background-color: #007BFF;
             color: white;
         }
-
         table tr:nth-child(even) {
             background-color: #f2f2f2;
         }
-
         /* Map Container */
         .map-container {
             width: 100%;
             height: 200px;
             margin: 20px 0;
         }
-
+        /* License Image Zoom */
+        .license-image {
+            max-width: 100px;
+            max-height: 100px;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+        .license-image:hover {
+            transform: scale(1.1);
+        }
+        /* Buttons */
+        .btn {
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-verify {
+            background-color: green;
+        }
+        .btn-cancel {
+            background-color: red;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
-
     <h1>Manage Bookings</h1>
-
     <!-- Booking Table -->
     <table>
         <thead>
@@ -75,42 +94,65 @@
                 <th>End Date</th>
                 <th>Total Amount</th>
                 <th>Location</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for booking in bookings %}
+            {% if bookings %}
+                {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.id }}</td>
+                        <td>{{ booking.customer.full_name }}</td>
+                        <td>
+                            {% if booking.customer.license_image %}
+                                <a href="{{ booking.customer.license_image.url }}" data-lightbox="license-{{ booking.id }}" data-title="License Image for {{ booking.customer.full_name }}">
+                                    <img src="{{ booking.customer.license_image.url }}" alt="License Image" class="license-image">
+                                </a>
+                            {% else %}
+                                No License Image Available
+                            {% endif %}
+                        </td>
+                        <td>{{ booking.customer.phone }}</td>
+                        <td>{{ booking.start_date }}</td>
+                        <td>{{ booking.end_date }}</td>
+                        <td>{{ booking.total_amount }}</td>
+                        <td>
+                            <div class="map-container" id="map-{{ booking.id }}"></div>
+                            <script>
+                                var map = L.map('map-{{ booking.id }}').setView([{{ booking.customer.latitude }}, {{ booking.customer.longitude }}], 13);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                }).addTo(map);
+                                L.marker([{{ booking.customer.latitude }}, {{ booking.customer.longitude }}]).addTo(map);
+                            </script>
+                        </td>
+                        <td>
+                            <span style="color: 
+                                {% if booking.status == 'pending' %}orange
+                                {% elif booking.status == 'verified' %}green
+                                {% elif booking.status == 'paid' %}blue
+                                {% endif %};">
+                                {{ booking.status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if booking.status == 'pending' %}
+                                <form action="{% url 'custom_admin:admin_verify_booking' booking.id %}" method="POST" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-verify">Verify</button>
+                                </form>
+                            {% endif %}
+                            <a href="{% url 'custom_admin:admin_booking_delete' booking.id %}" class="btn btn-cancel">Cancel</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
                 <tr>
-                    <td>{{ booking.id }}</td>
-                    <td>{{ booking.customer.full_name }}</td>
-                    <td>
-                        {% if booking.customer.license_image %}
-                            <img src="{{ booking.customer.license_image.url }}" alt="License Image" style="max-width: 100px; max-height: 100px;">
-                        {% else %}
-                            No License Image Available
-                        {% endif %}
-                    </td>
-                    <td>{{ booking.customer.phone }}</td>
-                    <td>{{ booking.start_date }}</td>
-                    <td>{{ booking.end_date }}</td>
-                    <td>{{ booking.total_amount }}</td>
-                    <td>
-                        <div class="map-container" id="map-{{ booking.id }}"></div>
-                        <script>
-                            var map = L.map('map-{{ booking.id }}').setView([{{ booking.customer.latitude }}, {{ booking.customer.longitude }}], 13);
-                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            }).addTo(map);
-                            L.marker([{{ booking.customer.latitude }}, {{ booking.customer.longitude }}]).addTo(map);
-                        </script>
-                    </td>
-                    <td>
-                        <a href="{% url 'admin_booking_delete' booking.id %}">Cancel</a>
-                    </td>
+                    <td colspan="10" style="text-align: center;">No bookings available.</td>
                 </tr>
-            {% endfor %}
+            {% endif %}
         </tbody>
     </table>
-
 </body>
 </html>

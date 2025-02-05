@@ -38,7 +38,6 @@ class index(ListView):
         context['user_lon'] = 0
         return context
 
-
 def nearby_cars(request):
     try:
         # Get latitude and longitude from the query parameters
@@ -50,12 +49,12 @@ def nearby_cars(request):
     # Fetch all cars from the database
     cars = Car.objects.all()
 
-    # Calculate distances and filter nearby cars
+    # Calculate distances and filter nearby cars using the Haversine formula
     nearby_cars_list = []
     for car in cars:
         if car.latitude is not None and car.longitude is not None:  # Ensure coordinates are valid
-            distance = geodesic((user_lat, user_lon), (car.latitude, car.longitude)).km
-            if distance <= 15:  # Only include cars within 50 km
+            distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
+            if distance <= 50:  # Only include cars within 50 km
                 nearby_cars_list.append({
                     'id': car.id,
                     'name': car.name,
@@ -75,22 +74,26 @@ def nearby_cars(request):
     return JsonResponse({'cars': nearby_cars_list})
 
 
+
 class BookingView(LoginRequiredMixin, View):
     def get(self, request):
         # Fetch car_id, latitude, and longitude from query parameters
         car_id = request.GET.get('car_id')
         latitude = request.GET.get('latitude')
         longitude = request.GET.get('longitude')
+
         if not car_id:
             return redirect('home')  # Redirect if no car_id is provided
+
         car = get_object_or_404(Car, id=car_id)
+
         # If no latitude or longitude is provided, fallback to default or error
         if latitude is None or longitude is None:
             return render(request, 'car/booking_form.html', {
                 'car': car,
                 'error_message': 'No location data found.'
             })
-        
+
         return render(request, 'car/booking_form.html', {
             'car': car,
             'latitude': latitude,
@@ -119,6 +122,32 @@ class BookingView(LoginRequiredMixin, View):
             return render(request, 'car/booking_form.html', {
                 'car': car,
                 'error_message': 'The end date must be later than the start date.'
+            })
+
+        # Check for overlapping bookings (exclude cancelled bookings)
+        overlapping_bookings = Booking.objects.filter(
+            car=car,
+            start_date__lt=end_date,  # The booking starts before the requested end date
+            end_date__gt=start_date,  # The booking ends after the requested start date
+            status__in=['pending', 'verified', 'paid']  # Exclude cancelled bookings
+        ).exists()
+
+        if overlapping_bookings:
+            # Get the overlapping booking details
+            overlapping_booking = Booking.objects.filter(
+                car=car,
+                start_date__lt=end_date,
+                end_date__gt=start_date,
+                status__in=['pending', 'verified', 'paid']
+            ).first()
+
+            error_message = (
+                f"This car is already booked from {overlapping_booking.start_date} "
+                f"to {overlapping_booking.end_date}. Please choose different dates."
+            )
+            return render(request, 'car/booking_form.html', {
+                'car': car,
+                'error_message': error_message
             })
 
         # Capture latitude and longitude from the form
@@ -164,7 +193,7 @@ class BookingView(LoginRequiredMixin, View):
             total_amount=total_amount
         )
 
-        return redirect('booking_confirmation', booking_id=booking.id)
+        return redirect('your_booking_list')
     
 @login_required
 def your_booking_list(request):
@@ -372,10 +401,45 @@ def manage_bookings(request):
     bookings = Booking.objects.all()  # You can filter based on criteria
     return render(request, 'manage_bookings.html', {'bookings': bookings})
 
+
 def admin_bookings(request):
+    if not request.user.is_authenticated:
+        return redirect('login')  # Redirect to login page if not authenticated
     user = request.user
-    bookings = Booking.objects.filter(car__admin=user)
+    bookings = Booking.objects.filter(car__admin=user).order_by('-start_date')
     return render(request, 'car/admin_bookings.html', {'bookings': bookings})
+
+def admin_verify_booking(request, booking_id):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    booking = get_object_or_404(Booking, id=booking_id)
+    if booking.car.admin != request.user:
+        messages.error(request, "You do not have permission to verify this booking.")
+        return redirect('admin_bookings')
+    if booking.status == 'pending':
+        booking.status = 'verified'
+        booking.save()
+        messages.success(request, f"Booking {booking.id} has been verified.")
+    else:
+        messages.error(request, "Only pending bookings can be verified.")
+    return redirect('admin_bookings')
+
+def admin_booking_delete(request, booking_id):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    booking = get_object_or_404(Booking, id=booking_id)
+    if booking.car.admin != request.user:
+        messages.error(request, "You do not have permission to delete this booking.")
+        return redirect('custom_admin:admin_bookings')
+    
+    # Update the booking status to 'cancelled' and add a notification
+    booking.status = 'cancelled'
+    booking.notification = "Your booking has been cancelled by the admin."
+    booking.save()
+    
+    messages.success(request, f"Booking {booking.id} has been cancelled.")
+    return redirect('custom_admin:admin_bookings')
 
 def admin_booking_detail(request, booking_id):
     # Get the specific booking by ID
@@ -396,15 +460,15 @@ class CancelBookingView(View):
         booking.save()
         return redirect('admin_booking_detail', booking_id=booking.id)
 
-def admin_booking_delete(request, booking_id):
-    # Get the specific booking by ID
-    booking = get_object_or_404(Booking, id=booking_id)
+# def admin_booking_delete(request, booking_id):
+#     # Get the specific booking by ID
+#     booking = get_object_or_404(Booking, id=booking_id)
     
-    if request.method == 'POST':
-        booking.delete()
-        return redirect('admin_bookings')  # Redirect to bookings list after deletion
+#     if request.method == 'POST':
+#         booking.delete()
+#         return redirect('admin_bookings')  # Redirect to bookings list after deletion
     
-    return render(request, 'car/admin_booking_delete.html', {'booking': booking})
+#     return render(request, 'car/admin_booking_delete.html', {'booking': booking})
 
 @login_required
 def password_change(request):
@@ -586,3 +650,54 @@ def verify_payment(request):
             return JsonResponse({"message": "Payment Verification Failed", "data": response_data}, status=400)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+def landing_page(request):
+    return render(request, 'car/land.html')
+
+
+def process_payment(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+
+    if booking.status != 'verified':
+        messages.error(request, "You can only pay for verified bookings.")
+        return redirect('your_booking_list')
+
+    # Simulate payment processing (replace with actual payment gateway integration)
+    booking.status = 'paid'
+    booking.save()
+
+    messages.success(request, "Payment successful!")
+    return redirect('your_booking_list')
+
+def user_cancel_booking(request, booking_id):
+    if not request.user.is_authenticated:
+        return redirect('login')  # Redirect to login page if not authenticated
+    
+    # Fetch the booking object
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    
+    # Check if the booking can be cancelled (e.g., only pending or verified bookings can be cancelled)
+    if booking.status in ['pending', 'verified']:
+        booking.status = 'cancelled'
+        booking.notification = "You have cancelled this booking."
+        booking.save()
+        messages.success(request, f"Booking {booking.id} has been cancelled.")
+    else:
+        messages.error(request, "This booking cannot be cancelled.")
+    
+    return redirect('your_booking_list')
+
+def user_delete_booking(request, booking_id):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    
+    # Allow deletion only for pending or cancelled bookings
+    if booking.status in ['pending', 'cancelled']:
+        booking.delete()
+        messages.success(request, f"Booking {booking.id} has been deleted.")
+    else:
+        messages.error(request, "Only pending or cancelled bookings can be deleted.")
+    
+    return redirect('your_booking_list')

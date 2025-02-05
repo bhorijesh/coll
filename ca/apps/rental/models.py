@@ -38,18 +38,27 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.full_name
-
+    
 class Booking(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('paid', 'Paid'),
+        ('cancelled', 'Cancelled'),  # Add a new status for cancelled bookings
+    )
+
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,  # Links to the User model
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='bookings'  # Explicitly define the reverse relationship name
+        related_name='bookings'
     )
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    notification = models.TextField(blank=True, null=True)  # Field for notifications
 
     def __str__(self):
         return f'{self.customer.full_name} - {self.car.name}'
