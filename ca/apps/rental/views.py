@@ -40,15 +40,11 @@ class index(ListView):
 
 
 def nearby_cars(request):
-    """
-    API endpoint to fetch nearby cars based on the device's current location.
-    """
     try:
         # Get latitude and longitude from the query parameters
         user_lat = float(request.GET.get('latitude'))
         user_lon = float(request.GET.get('longitude'))
     except (ValueError, TypeError):
-        # If latitude or longitude is invalid, return an error response
         return JsonResponse({'error': 'Invalid latitude or longitude'}, status=400)
 
     # Fetch all cars from the database
@@ -57,9 +53,9 @@ def nearby_cars(request):
     # Calculate distances and filter nearby cars
     nearby_cars_list = []
     for car in cars:
-        if car.latitude is not None and car.longitude is not None:
+        if car.latitude is not None and car.longitude is not None:  # Ensure coordinates are valid
             distance = geodesic((user_lat, user_lon), (car.latitude, car.longitude)).km
-            if distance <= 50:  # Only include cars within 50 km
+            if distance <= 15:  # Only include cars within 50 km
                 nearby_cars_list.append({
                     'id': car.id,
                     'name': car.name,
@@ -71,12 +67,13 @@ def nearby_cars(request):
                     'description': car.description,
                     'image_url': car.image.url if car.image else None,
                     'distance': round(distance, 2),
+                    'latitude': car.latitude,  # Include latitude in the response
+                    'longitude': car.longitude,  # Include longitude in the response
                 })
 
     # Return the list of nearby cars as JSON
     return JsonResponse({'cars': nearby_cars_list})
 
-from datetime import datetime, timedelta
 
 class BookingView(LoginRequiredMixin, View):
     def get(self, request):
