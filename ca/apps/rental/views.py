@@ -21,7 +21,6 @@ from django.views.decorators.csrf import csrf_exempt
 import math
 from .models import *
 from django.utils import timezone
-
 from .utils import *
 from .forms import *
 from django.conf import settings
@@ -191,6 +190,34 @@ class BookingView(LoginRequiredMixin, View):
             start_date=start_date,
             end_date=end_date,
             total_amount=total_amount
+        )
+
+
+        # Send an email notification to the user
+        subject = "Car Booking Confirmation"
+        message = f"""
+        Dear {request.user.username},
+
+        Your booking has been received successfully!
+
+        Booking Details:
+        - Car: {car.name}
+        - Start Date: {start_date}
+        - End Date: {end_date}
+        - Total Amount: ${total_amount}
+
+        Your booking is currently pending verification by the admin. 
+        You will receive another notification once your booking is verified.
+
+        Thank you for choosing our service!
+        """
+
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [request.user.email],
+            fail_silently=False,
         )
 
         return redirect('your_booking_list')
@@ -412,17 +439,82 @@ def admin_bookings(request):
 def admin_verify_booking(request, booking_id):
     if not request.user.is_authenticated:
         return redirect('login')
+    
     booking = get_object_or_404(Booking, id=booking_id)
     if booking.car.admin != request.user:
         messages.error(request, "You do not have permission to verify this booking.")
         return redirect('admin_bookings')
+    
+    action = request.POST.get('action', 'verify')  # Get action from form, default to verify
+    
     if booking.status == 'pending':
-        booking.status = 'verified'
-        booking.save()
-        messages.success(request, f"Booking {booking.id} has been verified.")
+        if action == 'verify':
+            booking.status = 'verified'
+            booking.save()
+            
+            # Send verification email to user
+            subject = "Booking Verified - Your Car Rental Request"
+            message = f"""
+            Dear {booking.user.username},
+
+            Your booking has been verified successfully!
+
+            Booking Details:
+            - Car: {booking.car.name}
+            - Start Date: {booking.start_date}
+            - End Date: {booking.end_date}
+            - Total Amount: ${booking.total_amount}
+
+            You can now proceed with the payment.
+
+            Thank you for choosing our service!
+            """
+            
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER,
+                [booking.user.email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, f"Booking {booking.id} has been verified and notification email sent.")
+            
+        elif action == 'reject':
+            booking.status = 'rejected'
+            booking.save()
+            
+            # Send rejection email to user
+            subject = "Booking Rejected - Car Rental Request"
+            message = f"""
+            Dear {booking.user.username},
+
+            Unfortunately, your booking request has been rejected.
+
+            Booking Details:
+            - Car: {booking.car.name}
+            - Start Date: {booking.start_date}
+            - End Date: {booking.end_date}
+
+            If you have any questions, please contact our support team.
+
+            Thank you for your understanding.
+            """
+            
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER,
+                [booking.user.email],
+                fail_silently=False,
+            )
+            
+            messages.warning(request, f"Booking {booking.id} has been rejected and notification email sent.")
     else:
-        messages.error(request, "Only pending bookings can be verified.")
+        messages.error(request, "Only pending bookings can be verified or rejected.")
+    
     return redirect('admin_bookings')
+
 
 def admin_booking_delete(request, booking_id):
     if not request.user.is_authenticated:
@@ -485,6 +577,7 @@ def password_change(request):
         form = PasswordChangeForm(user=request.user)
 
     return render(request, 'car/password_change.html', {'form': form})
+
 @login_required
 def admin_settings(request):
     return render(request, 'car/admin_settings.html')
