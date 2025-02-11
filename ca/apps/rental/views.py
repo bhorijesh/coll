@@ -21,10 +21,13 @@ from django.views.decorators.csrf import csrf_exempt
 import math
 from .models import *
 from django.utils import timezone
-
 from .utils import *
 from .forms import *
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class index(ListView):
     model = Car
@@ -54,7 +57,7 @@ def nearby_cars(request):
     for car in cars:
         if car.latitude is not None and car.longitude is not None:  # Ensure coordinates are valid
             distance = haversine(user_lat, user_lon, car.latitude, car.longitude)
-            if distance <= 50:  # Only include cars within 50 km
+            if distance <= 30:  # Only include cars within 50 km
                 nearby_cars_list.append({
                     'id': car.id,
                     'name': car.name,
@@ -191,6 +194,34 @@ class BookingView(LoginRequiredMixin, View):
             start_date=start_date,
             end_date=end_date,
             total_amount=total_amount
+        )
+
+
+        # Send an email notification to the user
+        subject = "Car Booking Confirmation"
+        message = f"""
+        Dear {request.user.username},
+
+        Your booking has been received successfully!
+
+        Booking Details:
+        - Car: {car.name}
+        - Start Date: {start_date}
+        - End Date: {end_date}
+        - Total Amount: ${total_amount}
+
+        Your booking is currently pending verification by the admin. 
+        You will receive another notification once your booking is verified.
+
+        Thank you for choosing our service!
+        """
+
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [request.user.email],
+            fail_silently=False,
         )
 
         return redirect('your_booking_list')
@@ -363,7 +394,11 @@ class RegisterView(FormView):
 class AboutUsView(View):
     def get(self, request):
         return render(request, 'car/about_us.html')
-
+    
+class MapView(View):
+    def get(self, request):
+        return render(request, 'car/map.html')
+    
 class ContactUsView(FormView):
     template_name = 'car/contact_us.html'
     form_class = ContactForm
@@ -412,34 +447,137 @@ def admin_bookings(request):
 def admin_verify_booking(request, booking_id):
     if not request.user.is_authenticated:
         return redirect('login')
+
     booking = get_object_or_404(Booking, id=booking_id)
     if booking.car.admin != request.user:
         messages.error(request, "You do not have permission to verify this booking.")
         return redirect('admin_bookings')
+
+    action = request.POST.get('action', 'verify')
+
     if booking.status == 'pending':
-        booking.status = 'verified'
-        booking.save()
-        messages.success(request, f"Booking {booking.id} has been verified.")
+        if action == 'verify':
+            booking.status = 'verified'
+            booking.save()
+
+            subject = "Booking Verified - Your Car Rental Request"
+            message = f"""
+            Dear {booking.customer.full_name},
+
+            Your booking has been verified successfully!
+
+            Booking Details:
+            - Car: {booking.car.name}
+            - Start Date: {booking.start_date}
+            - End Date: {booking.end_date}
+            - Total Amount: ${booking.total_amount}
+
+            You can now proceed with the payment.
+
+            Thank you for choosing our service!
+            """
+
+        elif action == 'reject':
+            booking.status = 'cancelled'
+            booking.notification = "Your booking has been cancelled by the admin."
+            booking.save()
+
+            subject = "Booking Rejected - Car Rental Request"
+            message = f"""
+            Dear {booking.customer.full_name},
+
+            Unfortunately, your booking request has been rejected.
+
+            Booking Details:
+            - Car: {booking.car.name}
+            - Start Date: {booking.start_date}
+            - End Date: {booking.end_date}
+
+            If you have any questions, please contact our support team.
+
+            Thank you for your understanding.
+            """
+
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER,
+                [booking.customer.email],  
+                fail_silently=False,
+            )
+            logger.info(f"Email sent to {booking.customer.email} for booking {booking.id}")
+        except Exception as e:
+            logger.error(f"Failed to send email to {booking.customer.email} for booking {booking.id}: {e}")
+
+        messages.success(request, f"Booking {booking.id} status updated and notification email sent.")
+
     else:
-        messages.error(request, "Only pending bookings can be verified.")
+        messages.error(request, "Only pending bookings can be verified or rejected.")
+
+    return redirect('admin_bookings')
+def admin_reject_booking(request, booking_id):
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    booking = get_object_or_404(Booking, id=booking_id)
+    if booking.car.admin != request.user:
+        messages.error(request, "You do not have permission to reject this booking.")
+        return redirect('admin_bookings')
+
+    if booking.status == 'pending':
+        booking.status = 'cancelled'
+        booking.notification = "Your booking has been cancelled by the admin."
+        booking.save()
+
+        subject = "Booking Rejected - Car Rental Request"
+        message = f"""
+        Dear {booking.customer.full_name},
+
+        Unfortunately, your booking request has been rejected.
+
+        Booking Details:
+        - Car: {booking.car.name}
+        - Start Date: {booking.start_date}
+        - End Date: {booking.end_date}
+
+        If you have any questions, please contact our support team.
+
+        Thank you for your understanding.
+        """
+
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER,
+                [booking.customer.email],
+                fail_silently=False,
+            )
+            logger.info(f"Email sent to {booking.customer.email} for booking {booking.id}")
+        except Exception as e:
+            logger.error(f"Failed to send email to {booking.customer.email} for booking {booking.id}: {e}")
+
+        messages.success(request, f"Booking {booking.id} has been cancelled and notification email sent.")
+    else:
+        messages.error(request, "Only pending bookings can be rejected.")
+
     return redirect('admin_bookings')
 
 def admin_booking_delete(request, booking_id):
     if not request.user.is_authenticated:
         return redirect('login')
-    
+
     booking = get_object_or_404(Booking, id=booking_id)
+
     if booking.car.admin != request.user:
         messages.error(request, "You do not have permission to delete this booking.")
-        return redirect('custom_admin:admin_bookings')
-    
-    # Update the booking status to 'cancelled' and add a notification
-    booking.status = 'cancelled'
-    booking.notification = "Your booking has been cancelled by the admin."
-    booking.save()
-    
-    messages.success(request, f"Booking {booking.id} has been cancelled.")
-    return redirect('custom_admin:admin_bookings')
+        return redirect('admin_bookings')
+
+    booking.delete()
+    messages.success(request, f"Booking {booking_id} has been deleted successfully.")
+
+    return redirect('admin_bookings')
 
 def admin_booking_detail(request, booking_id):
     # Get the specific booking by ID
@@ -485,6 +623,7 @@ def password_change(request):
         form = PasswordChangeForm(user=request.user)
 
     return render(request, 'car/password_change.html', {'form': form})
+
 @login_required
 def admin_settings(request):
     return render(request, 'car/admin_settings.html')

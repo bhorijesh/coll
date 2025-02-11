@@ -1,0 +1,52 @@
+<!-- templates/base.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Car Rental{% endblock %}</title>
+    <!-- Add SweetAlert2 for notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Add your CSS links here -->
+</head>
+<body>
+    <nav>
+        <!-- Your navigation bar -->
+        {% if user.is_authenticated %}
+            {% if user.is_superuser %}
+                <a href="{% url 'admin_homepage' %}">Admin Dashboard</a>
+            {% else %}
+                <a href="{% url 'index' %}">Home</a>
+                <a href="{% url 'your_booking_list' %}">My Bookings</a>
+            {% endif %}
+            <a href="{% url 'logout_page' %}">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'register' %}">Register</a>
+        {% endif %}
+    </nav>
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Notification handling -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for notifications in session storage
+        const notification = sessionStorage.getItem('notification');
+        if (notification) {
+            const {type, message} = JSON.parse(notification);
+            Swal.fire({
+                icon: type,
+                title: message,
+                showConfirmButton: false,
+                timer: 3000
+            });
+            sessionStorage.removeItem('notification');
+        }
+    });
+    </script>
+</body>
+</html>

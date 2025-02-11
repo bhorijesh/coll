@@ -1,4 +1,3 @@
-<!-- templates/your_booking_list.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,7 +64,7 @@
     <nav class="navbar bg-gray-900 shadow-lg">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <!-- Logo -->
-            <a href="{% url 'index' %}" class="text-2xl font-bold text-blue-400 hover:text-blue-500 transition duration-300">Car Booking</a>
+            <a href="{% url 'index' %}" class="text-2xl font-bold text-blue-400 hover:text-blue-500 transition duration-300">Nearby Car Rental</a>
             <!-- Nav Links -->
             <div class="hidden md:flex space-x-6 text-gray-300">
                 <a href="{% url 'index' %}" class="hover:text-white transition duration-300">Home</a>
@@ -120,12 +119,62 @@
                 {% endif %}
                 <!-- Show Pay Button Only for Verified Bookings -->
                 {% if booking.status == 'verified' %}
-                <form action="{% url 'process_payment' booking.id %}" method="POST" class="mt-4">
-                    {% csrf_token %}
-                    <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300">
-                        Pay Now
-                    </button>
-                </form>
+                <button id="payment-button-{{ booking.id }}" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300 mt-4">
+                    Pay Now
+                </button>
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        // Initialize Khalti Payment Widget
+                        var config = {
+                            "publicKey": "test_public_key_d577b97ec4b54691a1abfeef62a5218e", // Replace with your Khalti public key
+                            "productIdentity": "{{ booking.id }}",
+                            "productName": "{{ booking.car.name }}",
+                            "productUrl": "http://localhost:8000",
+                            "eventHandler": {
+                                onSuccess(payload) {
+                                    // Handle success event
+                                    console.log("Payment successful:", payload);
+                                    // Send token to backend for verification
+                                    fetch('/verify-payment/', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRFToken': '{{ csrf_token }}' // Pass CSRF token
+                                        },
+                                        body: JSON.stringify({
+                                            token: payload.token,
+                                            amount: {{ booking.total_amount|floatformat:"0" }} * 100, // Convert amount to paisa
+                                            booking_id: "{{ booking.id }}"
+                                        })
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert("Payment successful!");
+                                            location.reload(); // Reload the page to reflect the updated status
+                                        } else {
+                                            alert("Payment verification failed. Please try again.");
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error("Error verifying payment:", error);
+                                        alert("An error occurred. Please try again.");
+                                    });
+                                },
+                                onError(error) {
+                                    console.error("Payment error:", error);
+                                    alert("Payment failed. Please try again.");
+                                }
+                            }
+                        };
+                        var checkout = new KhaltiCheckout(config);
+                        // Attach click event to the Pay Now button
+                        document.getElementById('payment-button-{{ booking.id }}').addEventListener('click', function() {
+                            checkout.show({ amount: {{ booking.total_amount|floatformat:"0" }} * 100 }); // Convert amount to paisa
+                        });
+                    });
+                </script>
+                
                 {% endif %}
                 <!-- Show Cancel Button for Pending or Verified Bookings -->
                 {% if booking.status in 'pending verified' %}
@@ -145,5 +194,7 @@
             {% endfor %}
         </div>
     </div>
+    <!-- Include Khalti Script -->
+    <script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script>
 </body>
 </html>

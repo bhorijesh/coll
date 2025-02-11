@@ -4,136 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Cars</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <style>
-        /* General Styles */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7fc;
-            margin: 0;
-            padding: 0;
-        }
-        .main-content {
-            padding: 30px;
-        }
-        .header {
-            background-color: #007bff;
-            color: white;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header h1 {
-            font-size: 24px;
-        }
-        .header a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 16px;
-            padding: 10px 15px;
-            background-color: #ff5722;
-            border-radius: 5px;
-        }
-        .header a:hover {
-            background-color: #e64a19;
-        }
-
-        /* Table Styles */
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-        }
-        table th, table td {
-            padding: 12px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-        table th {
-            background-color: #f1f1f1;
-        }
-        table td a {
-            color: white;
-            text-decoration: none;
-        }
-
-        /* Button Styles */
-        .btn {
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #0056b3;
-        }
-        .btn-danger {
-            background-color: #dc3545;
-        }
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-
-        /* Dropdown Styling */
-        select {
-            padding: 10px;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-    </style>
 </head>
-<body>
+<body class="bg-gray-900 text-gray-200">
 
     <!-- Main Content -->
-    <div class="main-content">
-        <div class="header">
-            <h1>Manage Cars</h1>
-            <a href="{% url 'car_create' %}">Create New Car</a>
+    <div class="p-8">
+        <div class="bg-blue-600 p-4 rounded-lg flex justify-between items-center shadow-lg">
+            <h1 class="text-2xl font-bold">Manage Cars</h1>
+            <div>
+                <a href="{% url 'admin_homepage' %}" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600 shadow-md">Home</a>
+                <a href="{% url 'car_create' %}" class="bg-orange-500 px-4 py-2 rounded hover:bg-orange-600 shadow-md">Create New Car</a>
+            </div>
         </div>
 
-        <h2>List of Cars</h2>
+        <h2 class="text-2xl font-bold mt-6">List of Cars</h2>
 
         <!-- Car Dropdown List -->
-        <label for="car_list">Select a Car: </label>
-        <select id="car_list" onchange="window.location.href=this.value">
+        <label for="car_list" class="block mt-4 text-lg">Select a Car: </label>
+        <select id="car_list" class="p-2 rounded bg-gray-800 text-white shadow-md" onchange="window.location.href=this.value">
             <option value="">-- Choose a Car --</option>
             {% for car in cars %}
                 <option value="{% url 'car_update' car.id %}">{{ car.name }}</option>
             {% endfor %}
         </select>
 
-        <table>
+        <table class="w-full mt-6 border-collapse border border-gray-700 shadow-lg rounded-lg overflow-hidden">
             <thead>
-                <tr>
-                    <th>Car Name</th>
-                    <th>Description</th>
-                    <th>Price per Day</th>
-                    <th>Actions</th>
+                <tr class="bg-gray-800 text-lg">
+                    <th class="p-4 border border-gray-700">Car Image</th>
+                    <th class="p-4 border border-gray-700">Car Name</th>
+                    <th class="p-4 border border-gray-700">Price per Day</th>
+                    <th class="p-4 border border-gray-700">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for car in cars %}
-                    <tr>
-                        <td>{{ car.name }}</td>
-                        <td>{{ car.description }}</td>
-                        <td>${{ car.price_per_km }}</td>
-                        <td>
-                            <a href="{% url 'car_update' car.id %}" class="btn">Edit</a>
-                            <form action="{% url 'car_delete' car.id %}" method="POST" style="display:inline;">
+                    <tr class="text-center bg-gray-800 hover:bg-gray-700 transition">
+                        <td class="p-4 border border-gray-700">
+                            <img src="{{ car.image.url }}" alt="{{ car.name }}" class="w-20 h-16 object-cover rounded-lg shadow-md">
+                        </td>
+                        <td class="p-4 border border-gray-700 font-semibold">{{ car.name }}</td>
+                        <td class="p-4 border border-gray-700 text-green-400 font-bold">${{ car.price_per_km }}</td>
+                        <td class="p-4 border border-gray-700">
+                            <a href="{% url 'car_update' car.id %}" class="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 shadow-md">Edit</a>
+                            <form action="{% url 'car_delete' car.id %}" method="POST" class="inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this car?')">Delete</button>
+                                <button type="submit" class="bg-red-500 px-4 py-2 rounded hover:bg-red-600 shadow-md" onclick="return confirm('Are you sure you want to delete this car?')">Delete</button>
                             </form>
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="4">No cars found.</td>
+                        <td colspan="4" class="p-4 text-center text-gray-400">No cars found.</td>
                     </tr>
                 {% endfor %}
             </tbody>

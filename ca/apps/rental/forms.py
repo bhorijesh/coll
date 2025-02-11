@@ -42,10 +42,10 @@ class CarCreateForm(forms.ModelForm):
             'year': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter year'}),
             'fuel_type': forms.Select(attrs={'class': 'form-control'}),
             'seating_capacity': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Seats'}),
-            'price_per_km': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Price per km'}),
+            'price_per_km': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Price per Day'}),
             'is_available': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
-
+    price_per_km = forms.DecimalField(label="Price per Day", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Price per day'}))
     latitude = forms.FloatField()
     longitude = forms.FloatField()
 

@@ -93,3 +93,58 @@ class Payment(models.Model):
     status = models.CharField(max_length=20)
     transaction_id = models.CharField(max_length=50, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+
+from django.core.mail import send_mail
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=Booking)
+def send_booking_status_email(sender, instance, **kwargs):
+    """
+    Send an email notification to the customer when their booking status is updated.
+    """
+    if instance.status == 'verified':
+        subject = "Booking Verified - Your Car Rental Request"
+        message = f"""
+        Dear {instance.customer.full_name},
+
+        Congratulations! Your booking has been verified.
+
+        Booking Details:
+        - Car: {instance.car.name}
+        - Start Date: {instance.start_date}
+        - End Date: {instance.end_date}
+        - Total Amount: ${instance.total_amount}
+
+        Please proceed with the payment.
+
+        Thank you for choosing our service!
+        """
+    elif instance.status == 'cancelled':
+        subject = "Booking Rejected - Car Rental Request"
+        message = f"""
+        Dear {instance.customer.full_name},
+
+        Unfortunately, your booking request has been rejected.
+
+        Booking Details:
+        - Car: {instance.car.name}
+        - Start Date: {instance.start_date}
+        - End Date: {instance.end_date}
+
+        If you have any questions, please contact our support team.
+
+        Thank you for your understanding.
+        """
+    else:
+        return  # No need to send an email for other status changes
+
+    # Send the email
+    send_mail(
+        subject,
+        message,
+        settings.EMAIL_HOST_USER,  # Your configured email sender
+        [instance.customer.email],  # Send email to the customer
+        fail_silently=False,
+    )

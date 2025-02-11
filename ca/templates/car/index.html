@@ -27,6 +27,7 @@
             <!-- Navigation Links -->
             <div class="hidden md:flex space-x-6 text-gray-300 items-center">
                 <a href="{% url 'about_us' %}" class="hover:text-white transition duration-300 py-2 px-3 rounded-md hover:bg-gray-700">About Us</a>
+                <a href="{% url 'map' %}" class="hover:text-white transition duration-300 py-2 px-3 rounded-md hover:bg-gray-700">Map</a>
                 {% if user.is_authenticated %}
                     <a href="{% url 'your_booking_list' %}" class="hover:text-white transition duration-300 py-2 px-3 rounded-md hover:bg-gray-700">Your Bookings</a>
                 {% endif %}

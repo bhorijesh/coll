@@ -1,0 +1,16 @@
+<!-- templates/car/notifications.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Notifications</h2>
+<ul>
+    {% for notification in notifications %}
+    <li>
+        {{ notification.message }}
+        <small>{{ notification.created_at }}</small>
+    </li>
+    {% empty %}
+    <li>No notifications</li>
+    {% endfor %}
+</ul>
+{% endblock %}
