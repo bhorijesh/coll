@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Landing Page</title>
+    <title>Nearby CarRental</title>
     <style>
         /* General Styles */
         * {
@@ -100,18 +100,18 @@
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar">
-        <div class="logo">CarFinder</div>
+        <div class="logo">Nearby CarRental</div>
         <ul class="nav-links">
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Contact</a></li>
+            <!-- <li><a href="#">Home</a></li> -->
+            <a href="{% url 'about_us' %}" class="hover:text-white transition duration-300 py-2 px-3 rounded-md hover:bg-gray-700">About Us</a>
+            <a href="{% url 'contact_us' %}" class="hover:text-white transition duration-300">Contact</a>
         </ul>
     </nav>
     <!-- Background Image -->
     <div class="background-image"></div>
     <!-- Main Content -->
     <div class="container">
-        <h1>Welcome to CarFinder</h1>
+        <h1>Welcome to Nearby CarRental</h1>
         <p>Find the best cars near your location</p>
         <button id="findCarBtn">Find a Nearby Car</button>
         <p id="locationStatus"></p>

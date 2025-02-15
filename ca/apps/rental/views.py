@@ -229,9 +229,8 @@ class BookingView(LoginRequiredMixin, View):
 @login_required
 def your_booking_list(request):
     # Fetch bookings for the logged-in user
-    bookings = request.user.bookings.all()  # Use 'bookings' instead of 'booking_set'
+    bookings = request.user.bookings.all()
     return render(request, 'car/useerbooking.html', {'bookings': bookings})
-
 class BookingConfirmationView(LoginRequiredMixin, View):
     def get(self, request, booking_id):
         booking = Booking.objects.get(id=booking_id)
@@ -840,3 +839,33 @@ def user_delete_booking(request, booking_id):
         messages.error(request, "Only pending or cancelled bookings can be deleted.")
     
     return redirect('your_booking_list')
+
+@csrf_exempt
+def process_payment(request):
+    if request.method == "POST":
+        booking_id = request.POST.get('booking_id')
+        card_number = request.POST.get('card_number')
+        expiry_date = request.POST.get('expiry_date')
+        cvv = request.POST.get('cvv')
+        cardholder_name = request.POST.get('cardholder_name')
+
+        # Dummy card details
+        valid_card_number = '1111111111'
+        valid_expiry_date = '12/30'
+        valid_cvv = '123'
+
+        # Simulate a dummy payment check
+        if card_number == valid_card_number and expiry_date == valid_expiry_date and cvv == valid_cvv:
+            try:
+                booking = Booking.objects.get(id=booking_id)
+                total_amount = booking.total_amount
+                booking.status = 'paid'  # Change the booking status to 'paid'
+                booking.save()
+
+                return redirect('your_booking_list')  # Redirect after a successful payment
+            except Booking.DoesNotExist:
+                return JsonResponse({"error": "Booking not found"}, status=404)
+        
+        return JsonResponse({"error": "Invalid payment details"}, status=400)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)

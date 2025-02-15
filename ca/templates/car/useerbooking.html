@@ -58,6 +58,44 @@
             background-color: #441313; /* Even darker red on hover */
         }
     </style>
+    <script>
+        function showPaymentForm(bookingId, totalAmount) {
+            const formHtml = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white text-black p-6 rounded-lg shadow-lg">
+                        <h2 class="text-xl font-bold mb-4">Card Payment</h2>
+                        <form action="/process_payment/" method="POST">
+                            <input type="hidden" name="booking_id" value="${bookingId}" />
+                            <div class="mb-4">
+                                <label class="block mb-2">Card Number</label>
+                                <input type="text" name="card_number" class="w-full border border-gray-300 p-2 rounded" required />
+                            </div>
+                            <div class="mb-4">
+                                <label class="block mb-2">Expiry Date</label>
+                                <input type="text" name="expiry_date" placeholder="MM/YY" class="w-full border border-gray-300 p-2 rounded" required />
+                            </div>
+                            <div class="mb-4">
+                                <label class="block mb-2">CVV</label>
+                                <input type="text" name="cvv" class="w-full border border-gray-300 p-2 rounded" required />
+                            </div>
+                            <div class="mb-4">
+                                <label class="block mb-2">Cardholder Name</label>
+                                <input type="text" name="cardholder_name" class="w-full border border-gray-300 p-2 rounded" required />
+                            </div>
+                            <div class="mb-4">
+                                <label class="block mb-2">Total Amount</label>
+                                <input type="text" name="total_amount" value="${totalAmount}" class="w-full border border-gray-300 p-2 rounded" readonly />
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Pay Now</button>
+                                <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" class="ml-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', formHtml);
+        }
+    </script>
 </head>
 <body class="bg-black text-white font-sans">
     <!-- Navbar -->
@@ -70,15 +108,12 @@
                 <a href="{% url 'index' %}" class="hover:text-white transition duration-300">Home</a>
                 <a href="{% url 'about_us' %}" class="hover:text-white transition duration-300">About Us</a>
                 <a href="{% url 'contact_us' %}" class="hover:text-white transition duration-300">Contact</a>
-                <!-- Show "Your Booking List" only if the user is authenticated -->
                 {% if user.is_authenticated %}
                     <a href="{% url 'your_booking_list' %}" class="hover:text-white transition duration-300">Your Booking List</a>
                 {% endif %}
             </div>
-            <!-- Login/Logout Buttons -->
             <div class="flex space-x-4 items-center">
                 {% if user.is_authenticated %}
-                    <!-- Display username -->
                     <span class="text-gray-400">Hello, {{ user.username }}</span>
                     <a href="{% url 'logout_page' %}" class="text-red-500 hover:text-red-600 transition duration-300">Logout</a>
                 {% else %}
@@ -87,7 +122,6 @@
             </div>
         </div>
     </nav>
-    <!-- Your Booking List Content -->
     <div class="container mx-auto p-6">
         <h1 class="text-3xl font-bold text-white mb-6">Your Booking List</h1>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -113,77 +147,20 @@
                         <span class="status-cancelled">Cancelled</span>
                     {% endif %}
                 </p>
-                <!-- Show Notification for Cancelled Bookings -->
                 {% if booking.status == 'cancelled' and booking.notification %}
                     <p class="notification">{{ booking.notification }}</p>
                 {% endif %}
-                <!-- Show Pay Button Only for Verified Bookings -->
                 {% if booking.status == 'verified' %}
-                <button id="payment-button-{{ booking.id }}" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300 mt-4">
+                <button onclick="showPaymentForm('{{ booking.id }}', '{{ booking.total_amount }}')" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300 mt-4">
                     Pay Now
                 </button>
-                <script>
-                    document.addEventListener("DOMContentLoaded", function () {
-                        // Initialize Khalti Payment Widget
-                        var config = {
-                            "publicKey": "test_public_key_d577b97ec4b54691a1abfeef62a5218e", // Replace with your Khalti public key
-                            "productIdentity": "{{ booking.id }}",
-                            "productName": "{{ booking.car.name }}",
-                            "productUrl": "http://localhost:8000",
-                            "eventHandler": {
-                                onSuccess(payload) {
-                                    // Handle success event
-                                    console.log("Payment successful:", payload);
-                                    // Send token to backend for verification
-                                    fetch('/verify-payment/', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'X-CSRFToken': '{{ csrf_token }}' // Pass CSRF token
-                                        },
-                                        body: JSON.stringify({
-                                            token: payload.token,
-                                            amount: {{ booking.total_amount|floatformat:"0" }} * 100, // Convert amount to paisa
-                                            booking_id: "{{ booking.id }}"
-                                        })
-                                    })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.success) {
-                                            alert("Payment successful!");
-                                            location.reload(); // Reload the page to reflect the updated status
-                                        } else {
-                                            alert("Payment verification failed. Please try again.");
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error("Error verifying payment:", error);
-                                        alert("An error occurred. Please try again.");
-                                    });
-                                },
-                                onError(error) {
-                                    console.error("Payment error:", error);
-                                    alert("Payment failed. Please try again.");
-                                }
-                            }
-                        };
-                        var checkout = new KhaltiCheckout(config);
-                        // Attach click event to the Pay Now button
-                        document.getElementById('payment-button-{{ booking.id }}').addEventListener('click', function() {
-                            checkout.show({ amount: {{ booking.total_amount|floatformat:"0" }} * 100 }); // Convert amount to paisa
-                        });
-                    });
-                </script>
-                
                 {% endif %}
-                <!-- Show Cancel Button for Pending or Verified Bookings -->
-                {% if booking.status in 'pending verified' %}
+                {% if booking.status in 'pending verified ' %}
                 <form action="{% url 'user_cancel_booking' booking.id %}" method="POST" class="mt-4">
                     {% csrf_token %}
                     <button type="submit" class="btn-cancel">Cancel Booking</button>
                 </form>
                 {% endif %}
-                <!-- Show Delete Button -->
                 <form action="{% url 'user_delete_booking' booking.id %}" method="POST" class="mt-4">
                     {% csrf_token %}
                     <button type="submit" class="btn-delete">Delete Booking</button>
@@ -194,7 +171,5 @@
             {% endfor %}
         </div>
     </div>
-    <!-- Include Khalti Script -->
-    <script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script>
 </body>
 </html>
